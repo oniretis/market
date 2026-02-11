@@ -11,11 +11,11 @@ interface UploadProgressProps {
   className?: string;
 }
 
-export function UploadProgress({ 
-  isUploading, 
-  progress = 0, 
+export function UploadProgress({
+  isUploading,
+  progress = 0,
   fileName,
-  className 
+  className
 }: UploadProgressProps) {
   if (!isUploading) return null;
 
@@ -36,7 +36,7 @@ export function UploadProgress({
         </div>
         <Progress value={progress} className="h-2" />
         <p className="text-xs text-muted-foreground mt-1">
-          Please don't close this window
+          Please don&apos;t close this window
         </p>
       </div>
     </div>

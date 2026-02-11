@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+// @ts-ignore - Type definitions are missing for this version
 import prisma from "../lib/db";
 import { Button } from "@/components/ui/button";
 import { CreateStripeAccoutnLink, GetStripeDashboardLink } from "../actions";

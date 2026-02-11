@@ -14,10 +14,10 @@ interface ProductFileUploadProps {
   className?: string;
 }
 
-export function ProductFileUpload({ 
-  value, 
-  onChange, 
-  className 
+export function ProductFileUpload({
+  value,
+  onChange,
+  className
 }: ProductFileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -69,7 +69,7 @@ export function ProductFileUpload({
                 Upload your product file (ZIP format only)
               </p>
             </div>
-            
+
             <UploadDropzone
               endpoint="productFileUpload"
               onClientUploadComplete={handleUploadComplete}
@@ -80,10 +80,10 @@ export function ProductFileUpload({
                 mode: "auto",
               }}
             />
-            
+
             <div className="mt-4 text-center">
               <p className="text-xs text-muted-foreground">
-                <strong>Important:</strong> Make sure your ZIP file contains all necessary 
+                <strong>Important:</strong> Make sure your ZIP file contains all necessary
                 product files, documentation, and assets
               </p>
             </div>
@@ -99,7 +99,7 @@ export function ProductFileUpload({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               <div className="text-center">
                 <p className="font-medium">Uploading product file...</p>
-                <p className="text-sm text-muted-foreground">Please don't close this window</p>
+                <p className="text-sm text-muted-foreground">Please don&apos;t close this window</p>
               </div>
             </div>
           </CardContent>
@@ -116,7 +116,7 @@ export function ProductFileUpload({
                   <FileArchive className="h-8 w-8 text-green-600" />
                 </div>
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -131,7 +131,7 @@ export function ProductFileUpload({
                       <span>Successfully uploaded</span>
                     </div>
                   </div>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -144,10 +144,10 @@ export function ProductFileUpload({
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-xs text-blue-700">
-                <strong>Note:</strong> This file will be delivered to customers after purchase. 
+                <strong>Note:</strong> This file will be delivered to customers after purchase.
                 Make sure it contains all necessary product materials.
               </p>
             </div>

@@ -6,7 +6,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "./api/uploadthing/core";
 import { Toaster } from "@/components/ui/sonner";
-import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
+import { KindeAuthProvider } from "./components/KindeAuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,12 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <KindeProvider>
+        <KindeAuthProvider>
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <Navbar />
           {children}
           <Toaster richColors theme="light" closeButton />
-        </KindeProvider>
+        </KindeAuthProvider>
       </body>
     </html>
   );
