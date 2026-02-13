@@ -35,8 +35,8 @@ export const ourFileRouter = {
       return { uploadedBy: metadata.userId };
     }),
 
-  productFileUpload: f({
-    "application/zip": {
+  productVideoUpload: f({
+    video: {
       maxFileCount: 1,
       maxFileSize: "32MB"
     }

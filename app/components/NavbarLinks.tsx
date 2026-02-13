@@ -43,9 +43,9 @@ export function NavbarLinks() {
           key={item.id}
           className={cn(
             location === item.href
-              ? "bg-gradient-to-r from-primary/10 to-primary/5 text-primary shadow-md border border-primary/20"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-            "group flex items-center px-5 py-2.5 font-medium rounded-xl transition-all duration-300 relative hover:scale-105 hover:shadow-sm"
+              ? " text-primary "
+              : "text-muted-foreground hover:text-foreground ",
+            "group flex items-center text-sm px-5 py-2.5 font-bold transition-all duration-300 relative hover:scale-105"
           )}
         >
           {item.name}

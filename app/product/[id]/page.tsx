@@ -19,6 +19,7 @@ async function getData(id: string) {
   const data = await prisma.product.findUnique({
     where: {
       id: id,
+      status: "APPROVED",
     },
     select: {
       category: true,
@@ -26,9 +27,13 @@ async function getData(id: string) {
       smallDescription: true,
       name: true,
       images: true,
+      productVideo: true,
       price: true,
       createdAt: true,
       id: true,
+      location: true,
+      listingType: true,
+      phoneNumber: true,
       User: {
         select: {
           profileImage: true,
@@ -51,12 +56,28 @@ export default async function ProductPage({
     <section className="mx-auto px-4  lg:mt-10 max-w-7xl lg:px-8 lg:grid lg:grid-rows-1 lg:grid-cols-7 lg:gap-x-8 lg:gap-y-10 xl:gap-x-16">
       <Carousel className=" lg:row-end-1 lg:col-span-4">
         <CarouselContent>
+          {/* Show video first if it exists */}
+          {data?.productVideo && (
+            <CarouselItem>
+              <div className="aspect-w-4 aspect-h-3 rounded-lg bg-gray-100 overflow-hidden">
+                <video
+                  src={data.productVideo}
+                  controls
+                  className="w-full h-full rounded-lg object-cover"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </CarouselItem>
+          )}
+          {/* Show images */}
           {data?.images.map((item, index) => (
             <CarouselItem key={index}>
               <div className="aspect-w-4 aspect-h-3 rounded-lg bg-gray-100 overflow-hidden">
                 <Image
                   src={item as string}
-                  alt="yoo"
+                  alt="Product image"
                   fill
                   className="object-cover w-full h-full rounded-lg"
                 />
@@ -95,10 +116,50 @@ export default async function ProductPage({
             </h3>
 
             <h3 className="text-sm font-medium col-span-1">{data?.category}</h3>
+
+            {data?.listingType && (
+              <>
+                <h3 className="text-sm font-medium text-muted-foreground col-span-1">
+                  Listing Type:
+                </h3>
+                <h3 className="text-sm font-medium col-span-1">
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/10">
+                    {data.listingType}
+                  </span>
+                </h3>
+              </>
+            )}
+
+            {data?.location && (
+              <>
+                <h3 className="text-sm font-medium text-muted-foreground col-span-1">
+                  Location:
+                </h3>
+                <h3 className="text-sm font-medium col-span-1 text-foreground">
+                  📍 {data.location}
+                </h3>
+              </>
+            )}
+
+            {data?.phoneNumber && (
+              <>
+                <h3 className="text-sm font-medium text-muted-foreground col-span-1">
+                  Contact:
+                </h3>
+                <h3 className="text-sm font-medium col-span-1">
+                  <a
+                    href={`tel:${data.phoneNumber}`}
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                  >
+                    📞 {data.phoneNumber}
+                  </a>
+                </h3>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="border-t border-gray-200 mt-10"></div>
+        <div className="border-t border-gray-200 dark:border-gray-700 mt-10"></div>
       </div>
 
       <div className="w-full max-w-2xl mx-auto mt-16 lg:max-w-none lg:mt-0 lg:col-span-4">

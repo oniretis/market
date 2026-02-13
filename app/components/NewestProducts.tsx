@@ -11,6 +11,7 @@ async function getData() {
       name: true,
       id: true,
       images: true,
+      productVideo: true,
     },
     take: 4,
     orderBy: {
@@ -46,6 +47,7 @@ export async function NewestProducts() {
             name={product.name}
             price={product.price}
             smallDescription={product.smallDescription}
+            productVideo={product.productVideo}
           />
         ))}
       </div>

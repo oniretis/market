@@ -3,7 +3,6 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { ZodStringDef, z } from "zod";
 import prisma from "./lib/db";
 import { type CategoryTypes } from "@prisma/client";
-import { stripe } from "./lib/stripe";
 import { redirect } from "next/navigation";
 
 export type State = {
@@ -25,9 +24,12 @@ const productSchema = z.object({
     .min(10, { message: "Please summerize your product more" }),
   description: z.string().min(10, { message: "Description is required" }),
   images: z.array(z.string(), { message: "Images are required" }),
-  productFile: z
+  productVideo: z
     .string()
     .optional(),
+  phoneNumber: z.string().optional(),
+  location: z.string().optional(),
+  listingType: z.enum(["EXPRESS", "MARKET"]).default("MARKET"),
 });
 
 const userSettingsSchema = z.object({
@@ -52,6 +54,26 @@ export async function SellProduct(prevState: any, formData: FormData) {
     throw new Error("Something went wrong");
   }
 
+  // Check if user exists in database, create if not
+  let dbUser = await prisma.user.findUnique({
+    where: {
+      id: user.id,
+    },
+  });
+
+  if (!dbUser) {
+    dbUser = await prisma.user.create({
+      data: {
+        id: user.id,
+        firstName: user.given_name ?? "",
+        lastName: user.family_name ?? "",
+        email: user.email ?? "",
+        profileImage:
+          user.picture ?? `https://avatar.vercel.sh/${user.given_name}`,
+      },
+    });
+  }
+
   const validateFields = productSchema.safeParse({
     name: formData.get("name"),
     category: formData.get("category"),
@@ -59,7 +81,10 @@ export async function SellProduct(prevState: any, formData: FormData) {
     smallDescription: formData.get("smallDescription"),
     description: formData.get("description"),
     images: JSON.parse(formData.get("images") as string),
-    productFile: formData.get("productFile"),
+    productVideo: formData.get("productVideo"),
+    phoneNumber: formData.get("phoneNumber"),
+    location: formData.get("location"),
+    listingType: formData.get("listingType") || "MARKET",
   });
 
   if (!validateFields.success) {
@@ -79,7 +104,10 @@ export async function SellProduct(prevState: any, formData: FormData) {
       smallDescription: validateFields.data.smallDescription,
       price: validateFields.data.price,
       images: validateFields.data.images,
-      productFile: validateFields.data.productFile,
+      productVideo: validateFields.data.productVideo,
+      phoneNumber: validateFields.data.phoneNumber,
+      location: validateFields.data.location,
+      listingType: validateFields.data.listingType,
       userId: user.id,
       description: JSON.parse(validateFields.data.description),
     },
@@ -129,6 +157,21 @@ export async function UpdateUserSettings(prevState: any, formData: FormData) {
   return state;
 }
 
+export async function getCategories() {
+  const categories = await prisma.product.findMany({
+    select: {
+      category: true,
+    },
+    distinct: ['category'],
+  });
+
+  const uniqueCategories = Array.from(new Set(categories.map(c => c.category)));
+
+  return ["All", ...uniqueCategories.map(cat =>
+    cat.charAt(0).toUpperCase() + cat.slice(1)
+  )];
+}
+
 export async function BuyProduct(formData: FormData) {
   const id = formData.get("id") as string;
   const data = await prisma.product.findUnique({
@@ -140,109 +183,103 @@ export async function BuyProduct(formData: FormData) {
       smallDescription: true,
       price: true,
       images: true,
-      productFile: true,
-      User: {
-        select: {
-          connectedAccountId: true,
-        },
-      },
+      productVideo: true,
     },
   });
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          unit_amount: Math.round((data?.price as number) * 100),
-          product_data: {
-            name: data?.name as string,
-            description: data?.smallDescription,
-            images: data?.images,
-          },
-        },
-        quantity: 1,
-      },
-    ],
-    metadata: {
-      link: data?.productFile as string,
-    },
-
-    payment_intent_data: {
-      application_fee_amount: Math.round((data?.price as number) * 100) * 0.1,
-      transfer_data: {
-        destination: data?.User?.connectedAccountId as string,
-      },
-    },
-    success_url:
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/payment/success"
-        : "https://marshal-ui-yt.vercel.app/payment/success",
-    cancel_url:
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/payment/cancel"
-        : "https://marshal-ui-yt.vercel.app/payment/cancel",
-  });
-
-  return redirect(session.url as string);
+  // TODO: Implement your own payment logic here
+  // For now, redirect to a success page
+  return redirect(`/payment/success`);
 }
 
-export async function CreateStripeAccoutnLink() {
+export async function MarkProductAsSold(productId: string) {
   const { getUser } = getKindeServerSession();
-
   const user = await getUser();
 
   if (!user) {
-    throw new Error();
+    throw new Error("Unauthorized");
   }
 
-  const data = await prisma.user.findUnique({
-    where: {
-      id: user.id,
-    },
-    select: {
-      connectedAccountId: true,
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  if (product.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      isSold: true,
+      revenue: product.price,
     },
   });
 
-  const accountLink = await stripe.accountLinks.create({
-    account: data?.connectedAccountId as string,
-    refresh_url:
-      process.env.NODE_ENV === "development"
-        ? `http://localhost:3000/billing`
-        : `https://marshal-ui-yt.vercel.app/billing`,
-    return_url:
-      process.env.NODE_ENV === "development"
-        ? `http://localhost:3000/return/${data?.connectedAccountId}`
-        : `https://marshal-ui-yt.vercel.app/return/${data?.connectedAccountId}`,
-    type: "account_onboarding",
-  });
-
-  return redirect(accountLink.url);
+  return updatedProduct;
 }
 
-export async function GetStripeDashboardLink() {
-  const { getUser } = getKindeServerSession();
+export async function getUserRevenue(userId: string) {
+  const products = await prisma.product.findMany({
+    where: {
+      userId: userId,
+      isSold: true,
+    },
+    select: {
+      revenue: true,
+      price: true,
+      name: true,
+      createdAt: true,
+      listingType: true,
+    },
+  });
 
+  const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
+  const expressRevenue = products
+    .filter(p => p.listingType === 'EXPRESS')
+    .reduce((sum, product) => sum + product.revenue, 0);
+  const marketRevenue = products
+    .filter(p => p.listingType === 'MARKET')
+    .reduce((sum, product) => sum + product.revenue, 0);
+
+  return {
+    totalRevenue,
+    expressRevenue,
+    marketRevenue,
+    soldProducts: products,
+  };
+}
+
+export async function getDashboardData() {
+  const { getUser } = getKindeServerSession();
   const user = await getUser();
 
   if (!user) {
-    throw new Error();
+    throw new Error("Unauthorized");
   }
 
-  const data = await prisma.user.findUnique({
+  const revenueData = await getUserRevenue(user.id);
+  const totalProducts = await prisma.product.count({
+    where: { userId: user.id },
+  });
+  const soldProducts = await prisma.product.count({
     where: {
-      id: user.id,
-    },
-    select: {
-      connectedAccountId: true,
+      userId: user.id,
+      isSold: true,
     },
   });
+  const activeProducts = totalProducts - soldProducts;
 
-  const loginLink = await stripe.accounts.createLoginLink(
-    data?.connectedAccountId as string
-  );
-
-  return redirect(loginLink.url);
+  return {
+    ...revenueData,
+    totalProducts,
+    soldProducts,
+    activeProducts,
+  };
 }
+
+

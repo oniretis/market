@@ -19,15 +19,16 @@ import { SelectCategory } from "../SelectCategory";
 import { Textarea } from "@/components/ui/textarea";
 import { TipTapEditor } from "../Editor";
 import { ImageUpload } from "../ImageUpload";
-import { ProductFileUpload } from "../ProductFileUpload";
+import { ProductVideoUpload } from "../ProductVideoUpload";
 import { Submitbutton } from "../SubmitButtons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function SellForm() {
   const initalState: State = { message: "", status: undefined };
   const [state, formAction] = useFormState(SellProduct, initalState);
   const [json, setJson] = useState<null | JSONContent>(null);
   const [images, setImages] = useState<null | string[]>(null);
-  const [productFile, setProductFile] = useState<null | string>(null);
+  const [productVideo, setProductVideo] = useState<null | string>(null);
 
   useEffect(() => {
     if (state.status === "success") {
@@ -71,7 +72,7 @@ export function SellForm() {
         <div className="flex flex-col gap-y-2">
           <Label>Price</Label>
           <Input
-            placeholder="29$"
+            placeholder="₦9999"
             type="number"
             name="price"
             required
@@ -79,6 +80,48 @@ export function SellForm() {
           />
           {state?.errors?.["price"]?.[0] && (
             <p className="text-destructive">{state?.errors?.["price"]?.[0]}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label>Phone Number</Label>
+          <Input
+            name="phoneNumber"
+            type="tel"
+            placeholder="+1234567890"
+          />
+          {state?.errors?.["phoneNumber"]?.[0] && (
+            <p className="text-destructive">{state?.errors?.["phoneNumber"]?.[0]}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label>Location</Label>
+          <Input
+            name="location"
+            type="text"
+            placeholder="City, Country"
+          />
+          {state?.errors?.["location"]?.[0] && (
+            <p className="text-destructive">{state?.errors?.["location"]?.[0]}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label>Listing Type</Label>
+          <Select name="listingType" defaultValue="MARKET">
+            <SelectTrigger>
+              <SelectValue placeholder="Select listing type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MARKET">Market</SelectItem>
+              <SelectItem value="EXPRESS">Express</SelectItem>
+            </SelectContent>
+          </Select>
+          {state?.errors?.["listingType"]?.[0] && (
+            <p className="text-destructive">
+              {state?.errors?.["listingType"]?.[0]}
+            </p>
           )}
         </div>
 
@@ -126,15 +169,15 @@ export function SellForm() {
         </div>
 
         <div className="flex flex-col gap-y-2">
-          <input type="hidden" name="productFile" value={productFile ?? ""} />
-          <Label>Product File</Label>
-          <ProductFileUpload
-            value={productFile}
-            onChange={setProductFile}
+          <input type="hidden" name="productVideo" value={productVideo ?? ""} />
+          <Label>Product Video</Label>
+          <ProductVideoUpload
+            value={productVideo}
+            onChange={setProductVideo}
           />
-          {state?.errors?.["productFile"]?.[0] && (
+          {state?.errors?.["productVideo"]?.[0] && (
             <p className="text-destructive">
-              {state?.errors?.["productFile"]?.[0]}
+              {state?.errors?.["productVideo"]?.[0]}
             </p>
           )}
         </div>

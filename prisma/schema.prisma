@@ -9,30 +9,46 @@ datasource db {
 }
 
 model User {
-  id                    String  @id @unique
-  email                 String
-  firstName             String
-  lastName              String
-  profileImage          String
-  connectedAccountId    String  @unique
-  stripeConnectedLinked Boolean @default(false)
+  id           String  @id @unique
+  email        String
+  firstName    String
+  lastName     String
+  profileImage String
+  role         UserRole @default(USER)
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  Product Product[]
+  Product   Product[]
+  Review    Review[]
+  Activity  Activity[]
+  Advertisement Advertisement[]
 }
 
 model Product {
-  id               String        @id @default(uuid())
+  id               String          @id @default(uuid())
   name             String
   price            Int
   smallDescription String
   description      Json
   images           String[]
-  productFile      String?
+  productVideo     String?
   category         CategoryTypes
+  phoneNumber      String?
+  location         String?
+  listingType      ListingType     @default(MARKET)
+  revenue          Int             @default(0)
+  isSold           Boolean         @default(false)
+  status           ProductStatus   @default(PENDING)
+  approvedAt       DateTime?
+  approvedBy       String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  createdAt DateTime @default(now())
-  User      User     @relation(fields: [userId], references: [id])
-  userId    String
+  User     User      @relation(fields: [userId], references: [id])
+  userId   String
+  Review   Review[]
+  Tag      ProductTag[]
 }
 
 enum CategoryTypes {
@@ -40,4 +56,105 @@ enum CategoryTypes {
   gadgets
   cars
   others
+}
+
+enum ListingType {
+  EXPRESS
+  MARKET
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      @default(5)
+  comment   String?
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  User     User     @relation(fields: [userId], references: [id])
+  userId   String
+  Product  Product  @relation(fields: [productId], references: [id])
+  productId String
+}
+
+model Tag {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+  color       String @default("#3B82F6")
+  createdAt   DateTime @default(now())
+
+  ProductTag ProductTag[]
+}
+
+model ProductTag {
+  id        String @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  Product Product @relation(fields: [productId], references: [id])
+  productId String
+  Tag     Tag     @relation(fields: [tagId], references: [id])
+  tagId   String
+
+  @@unique([productId, tagId])
+}
+
+model Activity {
+  id          String       @id @default(uuid())
+  action      ActivityType
+  description String
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime     @default(now())
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId String
+}
+
+enum ActivityType {
+  USER_REGISTERED
+  PRODUCT_CREATED
+  PRODUCT_APPROVED
+  PRODUCT_REJECTED
+  PRODUCT_SOLD
+  REVIEW_CREATED
+  USER_BANNED
+  USER_UNBANNED
+  ROLE_CHANGED
+  LOGIN
+  LOGOUT
+  AD_CREATED
+  AD_UPDATED
+  AD_DELETED
+}
+
+model Advertisement {
+  id          String       @id @default(uuid())
+  title       String
+  imageUrl    String
+  linkUrl     String?
+  description String?
+  isActive    Boolean      @default(true)
+  position    Int          @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  User   User   @relation(fields: [createdBy], references: [id])
+  createdBy String
 }

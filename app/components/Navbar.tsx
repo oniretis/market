@@ -3,6 +3,7 @@ import Image from "next/image";
 import { NavbarLinks } from "./NavbarLinks";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "./MobileMenu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LoginLink,
   RegisterLink,
@@ -15,7 +16,7 @@ export async function Navbar() {
   const user = await getUser();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 shadow-lg">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 ">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:grid md:grid-cols-12 md:px-8 md:py-5">
 
         {/* Logo */}
@@ -24,15 +25,15 @@ export async function Navbar() {
             href="/"
             className="flex items-center gap-3 group transition-all duration-300 ease-out"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 p-1 shadow-sm group-hover:shadow-md transition-all duration-300">
-              <div className="relative overflow-hidden rounded-xl bg-background">
+            <div className="">
+              <div className="h-9 w-12">
                 <Image
                   src="/logos/logo.png"
                   alt="Market Logo"
-                  width={36}
-                  height={36}
+                  width={64}
+                  height={64}
                   priority
-                  className="transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-3"
+                  className=""
                 />
               </div>
             </div>
@@ -48,6 +49,7 @@ export async function Navbar() {
 
         {/* Right Section */}
         <div className="flex items-center gap-3 md:col-span-3 justify-end">
+          <ThemeToggle />
           {user ? (
             <UserNav
               email={user.email as string}

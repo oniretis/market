@@ -14,6 +14,7 @@ async function getData(userId: string) {
       price: true,
       smallDescription: true,
       id: true,
+      productVideo: true,
     },
   });
 
@@ -42,6 +43,7 @@ export default async function MyProductsRoute() {
             name={item.name}
             price={item.price}
             smallDescription={item.smallDescription}
+            productVideo={item.productVideo}
           />
         ))}
       </div>
