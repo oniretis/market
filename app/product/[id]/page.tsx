@@ -146,12 +146,20 @@ export default async function ProductPage({
                 <h3 className="text-sm font-medium text-muted-foreground col-span-1">
                   Contact:
                 </h3>
-                <h3 className="text-sm font-medium col-span-1">
+                {/* <h3 className="text-sm font-medium col-span-1">
                   <a
                     href={`tel:${data.phoneNumber}`}
                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
                   >
                     📞 {data.phoneNumber}
+                  </a>
+                </h3> */}
+                <h3 className="text-sm font-medium col-span-1">
+                  <a
+                    href={`tel:+234 906 656 2639`}
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                  >
+                    📞 +234 906 656 2639
                   </a>
                 </h3>
               </>
