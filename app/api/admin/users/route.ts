@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/app/lib/admin";
+import { getCurrentUser } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
+    }
 
     const users = await prisma.user.findMany({
       include: {

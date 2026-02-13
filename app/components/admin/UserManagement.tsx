@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  Search, 
-  Ban, 
-  Shield, 
+import {
+  Users,
+  Search,
+  Ban,
+  Shield,
   Crown,
   Mail,
   Calendar,
@@ -46,6 +46,22 @@ export function UserManagement() {
   const fetchUsers = async () => {
     try {
       const response = await fetch("/api/admin/users");
+
+      if (response.status === 401) {
+        console.error("Authentication required - redirecting to login");
+        window.location.href = "/api/auth/login";
+        return;
+      }
+
+      if (response.status === 403) {
+        console.error("Admin access required");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       setUsers(data.users || []);
     } catch (error) {
@@ -64,7 +80,7 @@ export function UserManagement() {
         },
         body: JSON.stringify({ isActive: !isActive }),
       });
-      
+
       if (response.ok) {
         fetchUsers(); // Refresh the list
       }
@@ -82,7 +98,7 @@ export function UserManagement() {
         },
         body: JSON.stringify({ role: newRole }),
       });
-      
+
       if (response.ok) {
         fetchUsers(); // Refresh the list
       }
@@ -93,9 +109,9 @@ export function UserManagement() {
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
     switch (activeTab) {
       case "active":
         return matchesSearch && user.isActive;
@@ -231,7 +247,7 @@ export function UserManagement() {
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        
+
                         {/* Role Change */}
                         <div className="flex items-center space-x-1">
                           <select
