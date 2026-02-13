@@ -30,7 +30,7 @@ export function ProductManager({ products, onProductSold }: ProductManagerProps)
 
   const handleMarkAsSold = async (productId: string) => {
     setIsUpdating(productId);
-    
+
     try {
       const response = await fetch(`/api/products/${productId}/mark-sold`, {
         method: 'POST',
@@ -83,7 +83,8 @@ export function ProductManager({ products, onProductSold }: ProductManagerProps)
               {product.phoneNumber && (
                 <div>
                   <p className="text-sm font-medium">Phone</p>
-                  <p>{product.phoneNumber}</p>
+                  {/* <p>{product.phoneNumber}</p> */}
+                  <p>+234 906 656 2639</p>
                 </div>
               )}
               {product.location && (

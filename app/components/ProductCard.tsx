@@ -127,11 +127,15 @@ export function ProductCard({
             📍 {location}
           </span>
         )}
-        {phoneNumber && (
+        {/* {phoneNumber && (
           <span className="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
             📞 {phoneNumber}
           </span>
-        )}
+        )} */}
+
+        <span className="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+          📞 +234 906 656 2639
+        </span>
       </div>
 
       <Button asChild className="w-full mt-5">
