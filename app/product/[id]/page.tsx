@@ -90,7 +90,7 @@ export default async function ProductPage({
       </Carousel>
 
       <div className="max-w-2xl mx-auto mt-5 lg:max-w-none lg:mt-0 lg:row-end-2 lg:row-span-2 lg:col-span-3">
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
           {data?.name}
         </h1>
 
@@ -170,7 +170,7 @@ export default async function ProductPage({
         <div className="border-t border-gray-200 dark:border-gray-700 mt-10"></div>
       </div>
 
-      <div className="w-full max-w-2xl mx-auto mt-16 lg:max-w-none lg:mt-0 lg:col-span-4">
+      <div className="w-full max-w-2xl mx-auto mt-16 lg:max-w-none lg:mt-0 lg:col-span-4 dark:text-white">
         <ProductDescription content={data?.description as JSONContent} />
       </div>
     </section>
