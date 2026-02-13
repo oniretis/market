@@ -64,7 +64,7 @@ export default async function DashboardRoute() {
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.activeProducts}</div>
             <p className="text-xs text-muted-foreground">
-              {dashboardData.soldProducts} sold out of {dashboardData.totalProducts}
+              {dashboardData.soldProductsCount} sold out of {dashboardData.totalProducts}
             </p>
           </CardContent>
         </Card>

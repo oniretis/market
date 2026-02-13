@@ -34,6 +34,14 @@ export default async function ManageProductsRoute() {
     },
   });
 
+  // Convert null values to undefined to match Product interface
+  const formattedProducts = products.map(product => ({
+    ...product,
+    phoneNumber: product.phoneNumber || undefined,
+    location: product.location || undefined,
+    createdAt: product.createdAt.toISOString(),
+  }));
+
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-8 mb-14">
       <Card>
@@ -44,15 +52,15 @@ export default async function ManageProductsRoute() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {products.length === 0 ? (
+          {formattedProducts.length === 0 ? (
             <p className="text-muted-foreground">No products listed yet.</p>
           ) : (
-            <ProductManager 
-              products={products} 
+            <ProductManager
+              products={formattedProducts}
               onProductSold={() => {
                 // This will be handled by the component itself
                 // In a real app, you might want to revalidate the page
-              }} 
+              }}
             />
           )}
         </CardContent>

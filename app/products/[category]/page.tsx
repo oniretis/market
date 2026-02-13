@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 
 async function getData(category: string) {
-  let input;
+  let input: CategoryTypes | undefined;
 
   switch (category) {
     case "properties": {
@@ -35,7 +35,7 @@ async function getData(category: string) {
 
   const data = await prisma.product.findMany({
     where: {
-      category: input,
+      ...(input && { category: input }),
       status: "APPROVED",
     },
     select: {

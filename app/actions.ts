@@ -277,7 +277,7 @@ export async function getDashboardData() {
   return {
     ...revenueData,
     totalProducts,
-    soldProducts,
+    soldProductsCount: soldProducts,
     activeProducts,
   };
 }

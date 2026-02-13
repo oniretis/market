@@ -71,7 +71,7 @@ export function ProductFileUpload({
             </div>
 
             <UploadDropzone
-              endpoint="productFileUpload"
+              endpoint="productVideoUpload"
               onClientUploadComplete={handleUploadComplete}
               onUploadBegin={handleUploadBegin}
               onUploadError={handleUploadError}

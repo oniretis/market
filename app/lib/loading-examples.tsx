@@ -32,7 +32,7 @@ export function FormSubmissionExample() {
   const { submit, isSubmitting, error } = useFormSubmission();
 
   const handleSubmit = async (formData: FormData) => {
-    return submit(
+    await submit(
       async () => {
         await new Promise(resolve => setTimeout(resolve, 1500));
         return { success: true };
