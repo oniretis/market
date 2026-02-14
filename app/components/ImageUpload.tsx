@@ -24,16 +24,16 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Debug logging
-  console.log("ImageUpload render - current value:", value);
-  console.log("ImageUpload render - value length:", value.length);
+  // Temporary debugging
+  console.log("ImageUpload - Current image URLs:", value);
+
 
   const handleUploadComplete = useCallback((res: any[]) => {
-    console.log("Upload completed:", res);
+    console.log("Upload completed - raw response:", res);
     const newUrls = res.map((item) => item.url);
-    console.log("New URLs:", newUrls);
+    console.log("Extracted URLs:", newUrls);
     const updatedUrls = [...value, ...newUrls].slice(0, maxFiles);
-    console.log("Updated URLs:", updatedUrls);
+    console.log("Final URLs after update:", updatedUrls);
     onChange(updatedUrls);
     toast.success(`${newUrls.length} image(s) uploaded successfully`);
   }, [value, onChange, maxFiles]);
@@ -79,20 +79,6 @@ export function ImageUpload({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Debug info */}
-      <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-        Debug: Current images count = {value.length}
-        <button
-          onClick={() => {
-            const testUrl = "https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFnc3xlbnwwfHwwfHx8MA%3D%3D";
-            onChange([...value, testUrl]);
-            console.log("Added test image:", testUrl);
-          }}
-          className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
-        >
-          Add Test Image
-        </button>
-      </div>
 
       {/* Upload Area */}
       {!isMaxFilesReached && (
@@ -123,10 +109,6 @@ export function ImageUpload({
             </p>
           </div>
 
-          {/* Debug: Show URLs */}
-          <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-            Debug: URLs = {JSON.stringify(value, null, 2)}
-          </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {value.map((url, index) => (
@@ -150,12 +132,16 @@ export function ImageUpload({
                       fill
                       className="object-cover"
                       onError={(e) => {
+                        console.error("Image failed to load:", url);
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         const parent = target.parentElement;
                         if (parent) {
                           parent.innerHTML = '<div class="aspect-square bg-gray-200 flex items-center justify-center"><svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
                         }
+                      }}
+                      onLoad={() => {
+                        console.log("Image loaded successfully:", url);
                       }}
                     />
 
