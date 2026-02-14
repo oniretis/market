@@ -38,7 +38,11 @@ export function AdminNav() {
 
   useEffect(() => {
     setPathname(routerPathname || "/");
-  }, [routerPathname]);
+    // Close sidebar on mobile when navigation occurs
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }, [routerPathname, sidebarOpen]);
 
   return (
     <>
@@ -81,7 +85,6 @@ export function AdminNav() {
                       ? "bg-blue-100 text-blue-700"
                       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   )}
-                  onClick={() => setSidebarOpen(false)}
                 >
                   <item.icon
                     className={cn(
