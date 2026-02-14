@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type JSONContent } from "@tiptap/react";
+import { JSONContent } from "@tiptap/react";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";

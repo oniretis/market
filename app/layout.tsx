@@ -12,6 +12,8 @@ import { LoadingManagerProvider } from "./lib/loading-manager";
 import { NavigationLoadingProvider } from "./lib/navigation-loading";
 import { GlobalLoadingOverlay } from "@/components/ui/global-loading-overlay";
 import { Suspense } from "react";
+import { ErrorBoundary } from "./components/ui/error-boundary";
+import { ToastProvider } from "./components/ui/simple-toast";
 
 
 export const metadata: Metadata = {
@@ -33,20 +35,24 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LoadingManagerProvider>
-            <Suspense>
-              <NavigationLoadingProvider>
-                <KindeAuthProvider>
-                  <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-                  <Navbar />
-                  {children}
-                  <Footer />
-                  <Toaster richColors theme="light" closeButton />
-                  <GlobalLoadingOverlay />
-                </KindeAuthProvider>
-              </NavigationLoadingProvider>
-            </Suspense>
-          </LoadingManagerProvider>
+          <ToastProvider>
+            <ErrorBoundary>
+              <LoadingManagerProvider>
+                <Suspense>
+                  <NavigationLoadingProvider>
+                    <KindeAuthProvider>
+                      <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+                      <Navbar />
+                      {children}
+                      <Footer />
+                      <Toaster richColors theme="light" closeButton />
+                      <GlobalLoadingOverlay />
+                    </KindeAuthProvider>
+                  </NavigationLoadingProvider>
+                </Suspense>
+              </LoadingManagerProvider>
+            </ErrorBoundary>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

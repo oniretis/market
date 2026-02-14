@@ -22,7 +22,7 @@ const productSchema = z.object({
   smallDescription: z
     .string()
     .min(10, { message: "Please summerize your product more" }),
-  description: z.string().min(10, { message: "Description is required" }),
+  description: z.string().optional(),
   images: z.array(z.string(), { message: "Images are required" }),
   productVideo: z
     .string()
@@ -74,13 +74,37 @@ export async function SellProduct(prevState: any, formData: FormData) {
     });
   }
 
+  // Parse description safely
+  let descriptionValue = null;
+  const descriptionRaw = formData.get("description") as string;
+  if (descriptionRaw && descriptionRaw !== "null" && descriptionRaw !== "undefined") {
+    try {
+      descriptionValue = JSON.parse(descriptionRaw);
+    } catch (e) {
+      console.error("Error parsing description:", e);
+      descriptionValue = null;
+    }
+  }
+
+  // Parse images safely
+  let imagesValue = [];
+  const imagesRaw = formData.get("images") as string;
+  if (imagesRaw && imagesRaw !== "null" && imagesRaw !== "undefined") {
+    try {
+      imagesValue = JSON.parse(imagesRaw);
+    } catch (e) {
+      console.error("Error parsing images:", e);
+      imagesValue = [];
+    }
+  }
+
   const validateFields = productSchema.safeParse({
     name: formData.get("name"),
     category: formData.get("category"),
     price: Number(formData.get("price")),
     smallDescription: formData.get("smallDescription"),
-    description: formData.get("description"),
-    images: JSON.parse(formData.get("images") as string),
+    description: descriptionValue,
+    images: imagesValue,
     productVideo: formData.get("productVideo"),
     phoneNumber: formData.get("phoneNumber"),
     location: formData.get("location"),
@@ -109,7 +133,7 @@ export async function SellProduct(prevState: any, formData: FormData) {
       location: validateFields.data.location,
       listingType: validateFields.data.listingType,
       userId: user.id,
-      description: JSON.parse(validateFields.data.description),
+      description: descriptionValue || {},
     },
   });
 

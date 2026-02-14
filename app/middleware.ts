@@ -10,7 +10,29 @@ export async function middleware(request: NextRequest) {
   // Protect admin routes
   if (pathname.startsWith("/admin")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/api/auth/login", request.url));
+      const loginUrl = new URL("/api/auth/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // For admin routes, we need to check the user's role in the database
+    // This is handled by the requireAdmin() function in the layout
+    // But we can add a basic check here to prevent unnecessary redirects
+    try {
+      const response = await fetch(`${request.nextUrl.origin}/api/auth/creation/internal`, {
+        method: "POST",
+        headers: {
+          cookie: request.headers.get("cookie") || "",
+        },
+      });
+
+      if (!response.ok) {
+        console.error("User verification failed in middleware:", await response.text());
+        // Don't block the request, let the layout handle it
+      }
+    } catch (error) {
+      console.error("Middleware user verification error:", error);
+      // Don't block the request, let the layout handle it
     }
   }
 

@@ -15,6 +15,8 @@ import {
   Calendar
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "../ui/simple-toast";
+import { apiRequest } from "../../hooks/use-api";
 
 function StatusBadge({ status }: { status: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED" }) {
   switch (status) {
@@ -60,11 +62,10 @@ export function ProductApprovalList() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/admin/products");
-      const data = await response.json();
+      const data = await apiRequest<{ products: Product[] }>('/api/admin/products');
       setProducts(data.products || []);
     } catch (error) {
-      console.error("Failed to fetch products:", error);
+      toast.error('Failed to fetch products', 'Error');
     } finally {
       setLoading(false);
     }
@@ -72,29 +73,25 @@ export function ProductApprovalList() {
 
   const handleApprove = async (productId: string) => {
     try {
-      const response = await fetch(`/api/admin/products/${productId}/approve`, {
+      await apiRequest(`/api/admin/products/${productId}/approve`, {
         method: "POST",
       });
-
-      if (response.ok) {
-        fetchProducts(); // Refresh the list
-      }
+      toast.success('Product approved successfully');
+      fetchProducts(); // Refresh the list
     } catch (error) {
-      console.error("Failed to approve product:", error);
+      // Error is already handled by apiRequest
     }
   };
 
   const handleReject = async (productId: string) => {
     try {
-      const response = await fetch(`/api/admin/products/${productId}/reject`, {
+      await apiRequest(`/api/admin/products/${productId}/reject`, {
         method: "POST",
       });
-
-      if (response.ok) {
-        fetchProducts(); // Refresh the list
-      }
+      toast.success('Product rejected successfully');
+      fetchProducts(); // Refresh the list
     } catch (error) {
-      console.error("Failed to reject product:", error);
+      // Error is already handled by apiRequest
     }
   };
 
