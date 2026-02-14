@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/admin";
+import prisma from "@/app/lib/db";
 
 export async function GET() {
   try {
     await requireAdmin();
 
-    // For now, return empty array since Activity model isn't in the schema yet
-    // In the future, this will fetch from the Activity model
-    const activities: any[] = [];
+    const activities = await prisma.activity.findMany({
+      include: {
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 100, // Limit to last 100 activities
+    });
 
     return NextResponse.json({ activities });
   } catch (error) {

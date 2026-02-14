@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  FolderOpen, 
-  Tag, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  FolderOpen,
+  Tag,
+  Plus,
+  Edit,
+  Trash2,
   Package,
   Hash
 } from "lucide-react";
@@ -32,6 +32,13 @@ interface TagItem {
   };
 }
 
+const AVAILABLE_CATEGORIES = [
+  "properties",
+  "gadgets",
+  "cars",
+  "others"
+];
+
 export function CategoryTagManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
@@ -50,10 +57,10 @@ export function CategoryTagManagement() {
         fetch("/api/admin/categories"),
         fetch("/api/admin/tags")
       ]);
-      
+
       const categoriesData = await categoriesResponse.json();
       const tagsData = await tagsResponse.json();
-      
+
       setCategories(categoriesData.categories || []);
       setTags(tagsData.tags || []);
     } catch (error) {
@@ -78,7 +85,7 @@ export function CategoryTagManagement() {
           color: newTagColor,
         }),
       });
-      
+
       if (response.ok) {
         setNewTagName("");
         setNewTagDescription("");
@@ -95,7 +102,7 @@ export function CategoryTagManagement() {
       const response = await fetch(`/api/admin/tags/${tagId}`, {
         method: "DELETE",
       });
-      
+
       if (response.ok) {
         fetchData(); // Refresh the list
       }
@@ -133,7 +140,7 @@ export function CategoryTagManagement() {
                 Product Categories
               </CardTitle>
               <CardDescription>
-                System-defined categories for product classification
+                System-defined categories for product classification. Categories are fixed and based on the database schema.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -158,6 +165,30 @@ export function CategoryTagManagement() {
                     </div>
                   </Card>
                 ))}
+              </div>
+
+              {categories.length === 0 && (
+                <div className="text-center py-8">
+                  <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-semibold">No categories found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Categories will appear here once products are created.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Available Categories:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_CATEGORIES.map((cat) => (
+                    <Badge key={cat} variant="secondary" className="capitalize">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  These categories are defined in the database schema and cannot be modified through the admin panel.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -240,12 +271,12 @@ export function CategoryTagManagement() {
                     <Card key={tag.id} className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
-                          <div 
+                          <div
                             className="h-10 w-10 rounded-lg flex items-center justify-center"
                             style={{ backgroundColor: `${tag.color}20` }}
                           >
-                            <Tag 
-                              className="h-5 w-5" 
+                            <Tag
+                              className="h-5 w-5"
                               style={{ color: tag.color }}
                             />
                           </div>

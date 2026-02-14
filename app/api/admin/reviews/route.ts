@@ -6,9 +6,26 @@ export async function GET() {
   try {
     await requireAdmin();
 
-    // For now, return empty array since Review model isn't in the schema yet
-    // In the future, this will fetch from the Review model
-    const reviews: any[] = [];
+    const reviews = await prisma.review.findMany({
+      include: {
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        Product: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
     return NextResponse.json({ reviews });
   } catch (error) {

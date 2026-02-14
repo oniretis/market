@@ -10,36 +10,81 @@ export async function GET() {
     const [
       totalUsers,
       totalProducts,
-      allProducts
+      allProducts,
+      pendingProducts,
+      approvedProducts,
+      rejectedProducts,
+      totalReviews,
+      pendingReviews
     ] = await Promise.all([
       prisma.user.count(),
       prisma.product.count(),
       prisma.product.findMany(),
+      prisma.product.count({ where: { status: "PENDING" } }),
+      prisma.product.count({ where: { status: "APPROVED" } }),
+      prisma.product.count({ where: { status: "REJECTED" } }),
+      prisma.review.count(),
+      prisma.review.count({ where: { isApproved: false } }),
     ]);
 
     // Calculate total revenue from all products (using price as placeholder)
     const totalRevenue = allProducts.reduce((sum, product) => sum + product.price, 0);
-    const soldProducts = allProducts.length; // Placeholder count
+    const soldProducts = allProducts.filter(product => product.isSold).length;
 
-    // Simplified stats for now (will be expanded after schema update)
+    // Get monthly growth data
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [
+      monthlyUsers,
+      monthlyProducts,
+      monthlyRevenue
+    ] = await Promise.all([
+      prisma.user.count({
+        where: { createdAt: { gte: thirtyDaysAgo } }
+      }),
+      prisma.product.count({
+        where: { createdAt: { gte: thirtyDaysAgo } }
+      }),
+      prisma.product.aggregate({
+        where: {
+          createdAt: { gte: thirtyDaysAgo },
+          status: "APPROVED"
+        },
+        _sum: { price: true }
+      })
+    ]);
+
+    // Get recent activity
+    const recentActivity = await prisma.activity.findMany({
+      include: {
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
     const stats = {
       totalUsers,
       totalProducts,
       totalRevenue,
-      pendingProducts: 0, // Will be implemented after schema update
-      approvedProducts: totalProducts, // Assuming all are approved for now
-      rejectedProducts: 0, // Will be implemented after schema update
+      pendingProducts,
+      approvedProducts,
+      rejectedProducts,
       soldProducts,
-      totalReviews: 0, // Will be implemented after schema update
-      pendingReviews: 0, // Will be implemented after schema update
+      totalReviews,
+      pendingReviews,
       monthlyGrowth: {
-        users: 12, // Placeholder
-        products: 8, // Placeholder
-        revenue: 15, // Placeholder
+        users: monthlyUsers,
+        products: monthlyProducts,
+        revenue: monthlyRevenue._sum.price || 0,
       },
     };
-
-    const recentActivity: any[] = []; // Will be implemented after schema update
 
     return NextResponse.json({
       stats,
