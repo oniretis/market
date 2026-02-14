@@ -24,15 +24,27 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  // Debug logging
+  console.log("ImageUpload render - current value:", value);
+  console.log("ImageUpload render - value length:", value.length);
+
   const handleUploadComplete = useCallback((res: any[]) => {
+    console.log("Upload completed:", res);
     const newUrls = res.map((item) => item.url);
+    console.log("New URLs:", newUrls);
     const updatedUrls = [...value, ...newUrls].slice(0, maxFiles);
+    console.log("Updated URLs:", updatedUrls);
     onChange(updatedUrls);
     toast.success(`${newUrls.length} image(s) uploaded successfully`);
   }, [value, onChange, maxFiles]);
 
   const handleUploadError = useCallback((error: Error) => {
-    toast.error("Upload failed: " + error.message);
+    console.error("Upload error:", error);
+    if (error.message.includes("Unauthorized")) {
+      toast.error("Please log in to upload images");
+    } else {
+      toast.error("Upload failed: " + error.message);
+    }
   }, []);
 
   const removeImage = useCallback((index: number) => {
@@ -67,6 +79,21 @@ export function ImageUpload({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {/* Debug info */}
+      <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+        Debug: Current images count = {value.length}
+        <button
+          onClick={() => {
+            const testUrl = "https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFnc3xlbnwwfHwwfHx8MA%3D%3D";
+            onChange([...value, testUrl]);
+            console.log("Added test image:", testUrl);
+          }}
+          className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+        >
+          Add Test Image
+        </button>
+      </div>
+
       {/* Upload Area */}
       {!isMaxFilesReached && (
         <Card className="border-dashed border-2 transition-colors hover:border-primary/50">
@@ -94,6 +121,11 @@ export function ImageUpload({
             <p className="text-xs text-muted-foreground">
               Drag to reorder
             </p>
+          </div>
+
+          {/* Debug: Show URLs */}
+          <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+            Debug: URLs = {JSON.stringify(value, null, 2)}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

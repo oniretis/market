@@ -27,7 +27,7 @@ export function SellForm() {
   const initalState: State = { message: "", status: undefined };
   const [state, formAction] = useFormState(SellProduct, initalState);
   const [json, setJson] = useState<null | JSONContent>(null);
-  const [images, setImages] = useState<null | string[]>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [productVideo, setProductVideo] = useState<null | string>(null);
 
   useEffect(() => {
@@ -156,10 +156,10 @@ export function SellForm() {
         </div>
 
         <div className="flex flex-col gap-y-2">
-          <input type="hidden" name="images" value={JSON.stringify(images || [])} />
+          <input type="hidden" name="images" value={JSON.stringify(images)} />
           <Label>Product Images</Label>
           <ImageUpload
-            value={images || []}
+            value={images}
             onChange={setImages}
             maxFiles={5}
           />

@@ -137,7 +137,7 @@ export async function SellProduct(prevState: any, formData: FormData) {
     },
   });
 
-  return redirect(`/product/${data.id}`);
+  return redirect(`/product-pending`);
 }
 
 export async function UpdateUserSettings(prevState: any, formData: FormData) {
