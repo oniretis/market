@@ -23,6 +23,11 @@ export async function GET() {
 
     return NextResponse.json({ products });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ products: [] });
+    }
+
     console.error("Products API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },

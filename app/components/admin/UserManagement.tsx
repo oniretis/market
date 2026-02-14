@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
 import {
   Users,
   Search,
@@ -197,11 +198,14 @@ export function UserManagement() {
                         {/* User Avatar */}
                         <div className="flex-shrink-0">
                           {user.profileImage ? (
-                            <img
-                              src={user.profileImage}
-                              alt={`${user.firstName} ${user.lastName}`}
-                              className="h-12 w-12 rounded-full object-cover"
-                            />
+                            <div className="relative h-12 w-12">
+                              <Image
+                                src={user.profileImage}
+                                alt={`${user.firstName} ${user.lastName}`}
+                                fill
+                                className="rounded-full object-cover"
+                              />
+                            </div>
                           ) : (
                             <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
                               <Users className="h-6 w-6 text-gray-400" />

@@ -12,6 +12,11 @@ export async function GET() {
 
     return NextResponse.json({ reviews });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ reviews: [] });
+    }
+
     console.error("Reviews API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch reviews" },

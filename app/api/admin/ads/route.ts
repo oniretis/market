@@ -21,6 +21,11 @@ export async function GET() {
 
     return NextResponse.json({ ads });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ ads: [] });
+    }
+
     console.error("Error fetching ads:", error);
     return NextResponse.json({ error: "Failed to fetch ads" }, { status: 500 });
   }
@@ -63,6 +68,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ad }, { status: 201 });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ error: "Cannot create ads during build" }, { status: 400 });
+    }
+
     console.error("Error creating ad:", error);
     return NextResponse.json({ error: "Failed to create ad" }, { status: 500 });
   }

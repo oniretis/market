@@ -11,6 +11,11 @@ export async function GET() {
 
     return NextResponse.json({ activities });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ activities: [] });
+    }
+
     console.error("Activity API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch activities" },

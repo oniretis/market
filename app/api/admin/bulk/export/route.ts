@@ -58,6 +58,29 @@ export async function GET() {
       },
     });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      const headers = [
+        'ID',
+        'Name',
+        'Price',
+        'Category',
+        'Description',
+        'Seller Name',
+        'Seller Email',
+        'Created At',
+        'Status'
+      ];
+      const csvContent = headers.join(',') + '\n'; // Empty data
+
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="products-${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
+    }
+
     console.error("Export error:", error);
     return NextResponse.json(
       { error: "Failed to export products" },

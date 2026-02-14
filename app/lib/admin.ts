@@ -20,6 +20,11 @@ export async function getCurrentUser() {
 }
 
 export async function requireAuth() {
+  // Skip authentication during build/static generation
+  if (process.env.NEXT_PHASE === "phase-production-build" || process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build") {
+    throw new Error("Build environment - skipping auth");
+  }
+
   const user = await getCurrentUser();
 
   if (!user) {
@@ -32,7 +37,7 @@ export async function requireAuth() {
 export async function requireAdmin() {
   const user = await requireAuth();
 
-  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
     redirect("/unauthorized");
   }
 
@@ -42,7 +47,7 @@ export async function requireAdmin() {
 export async function requireSuperAdmin() {
   const user = await requireAuth();
 
-  if (user.role !== "SUPER_ADMIN") {
+  if (!user || user.role !== "SUPER_ADMIN") {
     redirect("/unauthorized");
   }
 

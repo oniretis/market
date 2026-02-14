@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
 import {
   CheckCircle,
   XCircle,
@@ -156,11 +157,14 @@ export function ProductApprovalList() {
                       {/* Product Image */}
                       <div className="flex-shrink-0">
                         {product.images && product.images.length > 0 ? (
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="h-24 w-24 rounded-lg object-cover"
-                          />
+                          <div className="relative h-24 w-24">
+                            <Image
+                              src={product.images[0]}
+                              alt={product.name}
+                              fill
+                              className="rounded-lg object-cover"
+                            />
+                          </div>
                         ) : (
                           <div className="h-24 w-24 rounded-lg bg-gray-200 flex items-center justify-center">
                             <Package className="h-8 w-8 text-gray-400" />

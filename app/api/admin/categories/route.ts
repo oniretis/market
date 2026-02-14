@@ -21,6 +21,11 @@ export async function GET() {
 
     return NextResponse.json({ categories: formattedCategories });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({ categories: [] });
+    }
+
     console.error("Categories API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch categories" },

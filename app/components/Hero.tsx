@@ -6,6 +6,7 @@ import Tags from "./base/common/tags";
 import CounterBox from "./containers/store/counter-box";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { getCategories } from "@/app/actions";
 
 export default function Hero() {
@@ -81,7 +82,7 @@ export default function Hero() {
     };
 
     fetchAdvertisements();
-  }, []);
+  }, [defaultImages]);
 
   // Reset currentIndex when carouselImages changes to prevent out-of-bounds
   useEffect(() => {
@@ -130,11 +131,12 @@ export default function Hero() {
     <section className="@container container mx-auto space-y-8 px-4 pt-[10px]">
       <div className="relative rounded-2xl border border-dashed">
         <div className="relative">
-          <div className="relative overflow-hidden rounded-2xl rounded-b-none">
-            <img
+          <div className="relative overflow-hidden rounded-2xl rounded-b-none h-[420px]">
+            <Image
               src={carouselImages[currentIndex]}
               alt={`Hero slide ${currentIndex + 1}`}
-              className={`h-[420px] w-full object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''
+              fill
+              className={`object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''
                 }`}
               onClick={handleImageClick}
             />

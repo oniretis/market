@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import Image from "next/image";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Edit, Plus, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -315,14 +316,17 @@ export default function AdvertisementManagement() {
 
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={ad.imageUrl}
-                          alt={ad.title}
-                          className="h-16 w-16 object-cover rounded"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/64x64?text=Error";
-                          }}
-                        />
+                        <div className="relative h-16 w-16">
+                          <Image
+                            src={ad.imageUrl}
+                            alt={ad.title}
+                            fill
+                            className="object-cover rounded"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://via.placeholder.com/64x64?text=Error";
+                            }}
+                          />
+                        </div>
                         <div>
                           <p className="text-sm font-medium">Image Preview</p>
                           <p className="text-xs text-muted-foreground truncate max-w-[200px]">

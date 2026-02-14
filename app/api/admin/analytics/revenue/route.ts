@@ -80,6 +80,21 @@ export async function GET() {
 
     return NextResponse.json(revenueData);
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({
+        totalRevenue: 0,
+        monthlyRevenue: Array.from({ length: 12 }, () => 0),
+        topSellingProducts: [],
+        categoryRevenue: [],
+        monthlyStats: {
+          currentMonth: 0,
+          lastMonth: 0,
+          growth: 0,
+        },
+      });
+    }
+
     console.error("Revenue analytics API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch revenue analytics" },

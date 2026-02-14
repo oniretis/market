@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Upload, Image as ImageIcon, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface ImageUploadProps {
   value: string[];
@@ -15,11 +16,11 @@ interface ImageUploadProps {
   className?: string;
 }
 
-export function ImageUpload({ 
-  value = [], 
-  onChange, 
+export function ImageUpload({
+  value = [],
+  onChange,
   maxFiles = 5,
-  className 
+  className
 }: ImageUploadProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -57,7 +58,7 @@ export function ImageUpload({
     const newUrls = [...value];
     const [draggedUrl] = newUrls.splice(draggedIndex, 1);
     newUrls.splice(dropIndex, 0, draggedUrl);
-    
+
     onChange(newUrls);
     setDraggedIndex(null);
   }, [value, onChange, draggedIndex]);
@@ -94,7 +95,7 @@ export function ImageUpload({
               Drag to reorder
             </p>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {value.map((url, index) => (
               <Card
@@ -111,12 +112,13 @@ export function ImageUpload({
               >
                 <CardContent className="p-0">
                   <div className="aspect-square relative">
-                    <img
+                    <Image
                       src={url}
                       alt={`Upload ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
-                    
+
                     {/* Overlay with controls */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -131,14 +133,14 @@ export function ImageUpload({
                           </Button>
                         </div>
                       </div>
-                      
+
                       {/* Drag indicator */}
                       <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <div className="bg-white/90 rounded p-1">
                           <GripVertical className="h-4 w-4 text-gray-600" />
                         </div>
                       </div>
-                      
+
                       {/* Image number */}
                       <div className="absolute top-2 right-2 bg-white/90 rounded px-2 py-1">
                         <span className="text-xs font-medium text-gray-700">
@@ -176,8 +178,8 @@ export function ImageUpload({
       {/* File count indicator */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          {isMaxFilesReached 
-            ? `Maximum ${maxFiles} images reached` 
+          {isMaxFilesReached
+            ? `Maximum ${maxFiles} images reached`
             : `${value.length} of ${maxFiles} images uploaded`
           }
         </span>

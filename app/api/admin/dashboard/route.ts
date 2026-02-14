@@ -46,6 +46,29 @@ export async function GET() {
       recentActivity,
     });
   } catch (error) {
+    // Handle build environment gracefully
+    if (error instanceof Error && error.message.includes("Build environment")) {
+      return NextResponse.json({
+        stats: {
+          totalUsers: 0,
+          totalProducts: 0,
+          totalRevenue: 0,
+          pendingProducts: 0,
+          approvedProducts: 0,
+          rejectedProducts: 0,
+          soldProducts: 0,
+          totalReviews: 0,
+          pendingReviews: 0,
+          monthlyGrowth: {
+            users: 0,
+            products: 0,
+            revenue: 0,
+          },
+        },
+        recentActivity: [],
+      });
+    }
+
     console.error("Dashboard API error:", error);
     return NextResponse.json(
       { error: "Failed to fetch dashboard data" },
