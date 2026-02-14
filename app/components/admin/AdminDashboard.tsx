@@ -97,7 +97,7 @@ export function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.totalUsers || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               +{stats.monthlyGrowth.users}% from last month
             </p>
@@ -110,7 +110,7 @@ export function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.totalProducts || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               +{stats.monthlyGrowth.products}% from last month
             </p>
@@ -123,7 +123,7 @@ export function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(stats.totalRevenue || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               +{stats.monthlyGrowth.revenue}% from last month
             </p>
@@ -136,7 +136,7 @@ export function AdminDashboard() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.soldProducts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.soldProducts || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               {stats.totalProducts > 0 ? Math.round((stats.soldProducts / stats.totalProducts) * 100) : 0}% conversion rate
             </p>
@@ -271,7 +271,7 @@ export function AdminDashboard() {
                           {activity.user.firstName} {activity.user.lastName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(activity.createdAt).toLocaleString()}
+                          {activity.createdAt ? new Date(activity.createdAt).toLocaleString() : 'N/A'}
                         </p>
                       </div>
                     </div>

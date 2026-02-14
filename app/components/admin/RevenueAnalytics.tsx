@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
   ShoppingCart,
   Package,
   Users,
@@ -88,7 +88,7 @@ export function RevenueAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${revenueData.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(revenueData.totalRevenue || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               All time revenue
             </p>
@@ -101,7 +101,7 @@ export function RevenueAnalytics() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${revenueData.monthlyStats.currentMonth.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(revenueData.monthlyStats.currentMonth || 0).toLocaleString()}</div>
             <p className="text-xs flex items-center">
               {revenueData.monthlyStats.growth >= 0 ? (
                 <>
@@ -125,7 +125,7 @@ export function RevenueAnalytics() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${revenueData.monthlyStats.lastMonth.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(revenueData.monthlyStats.lastMonth || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Previous month revenue
             </p>
@@ -139,7 +139,7 @@ export function RevenueAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${revenueData.monthlyStats.currentMonth > 0 
+              ${revenueData.monthlyStats.currentMonth > 0
                 ? Math.round(revenueData.monthlyStats.currentMonth / 10) // Placeholder calculation
                 : 0}
             </div>
@@ -193,7 +193,7 @@ export function RevenueAnalytics() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">${product.revenue.toLocaleString()}</p>
+                        <p className="font-semibold">${(product.revenue || 0).toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground">
                           {Math.round((product.revenue / revenueData.totalRevenue) * 100)}% of total
                         </p>
@@ -233,7 +233,7 @@ export function RevenueAnalytics() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">${category.revenue.toLocaleString()}</p>
+                      <p className="font-semibold">${(category.revenue || 0).toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground">
                         {Math.round((category.revenue / revenueData.totalRevenue) * 100)}% of total
                       </p>
@@ -263,16 +263,16 @@ export function RevenueAnalytics() {
                     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                     const currentMonth = new Date().getMonth();
                     const monthIndex = (currentMonth - 5 + index + 12) % 12;
-                    
+
                     return (
                       <div key={index} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold">{monthNames[monthIndex]}</h4>
-                          <p className="font-bold">${revenue.toLocaleString()}</p>
+                          <p className="font-bold">${(revenue || 0).toLocaleString()}</p>
                         </div>
                         <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${Math.min((revenue / Math.max(...revenueData.monthlyRevenue)) * 100, 100)}%` }}
                           ></div>
                         </div>

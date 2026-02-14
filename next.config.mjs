@@ -7,7 +7,23 @@ const nextConfig = {
         protocol: "https",
         port: "",
       },
+      {
+        hostname: "uploadthing.com",
+        protocol: "https",
+        port: "",
+      },
+      {
+        hostname: "*.uploadthing.com",
+        protocol: "https",
+        port: "",
+      },
+      {
+        hostname: "images.unsplash.com",
+        protocol: "https",
+        port: "",
+      },
     ],
+    unoptimized: false,
   },
 };
 

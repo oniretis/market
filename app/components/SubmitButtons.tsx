@@ -33,7 +33,7 @@ export function BuyButton({ price }: { price: number }) {
         </Button>
       ) : (
         <Button type="submit" size="lg" className="w-full mt-10">
-          ₦{price.toLocaleString()}
+          ₦{(price || 0).toLocaleString()}
         </Button>
       )}
     </>

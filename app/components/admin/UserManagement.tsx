@@ -204,6 +204,14 @@ export function UserManagement() {
                                 alt={`${user.firstName} ${user.lastName}`}
                                 fill
                                 className="rounded-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center"><span class="text-gray-500 font-medium">' + (user.firstName?.[0] || 'U') + (user.lastName?.[0] || 'U') + '</span></div>';
+                                  }
+                                }}
                               />
                             </div>
                           ) : (
