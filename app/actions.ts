@@ -22,7 +22,7 @@ const productSchema = z.object({
   smallDescription: z
     .string()
     .min(10, { message: "Please summerize your product more" }),
-  description: z.string().optional(),
+  description: z.any().optional(),
   images: z.array(z.string(), { message: "Images are required" }),
   productVideo: z
     .string()
