@@ -25,10 +25,10 @@ export default function ProductPendingPage() {
               Product Submitted Successfully!
             </CardTitle>
             <CardDescription className="text-gray-600 text-base mt-2">
-              Thank you for listing your product. It's now pending review and will be live once approved by our admin team.
+              Thank you for listing your product. It&apos;s now pending review and will be live once approved by our admin team.
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start space-x-3">
@@ -61,7 +61,7 @@ export default function ProductPendingPage() {
                   Back to Home
                 </Link>
               </Button>
-              
+
               <Button asChild variant="outline" className="flex-1 border-purple-200 text-purple-600 hover:bg-purple-50 transition-all duration-200">
                 <Link href="/sell" className="flex items-center justify-center">
                   <PlusCircle className="w-4 h-4 mr-2" />
