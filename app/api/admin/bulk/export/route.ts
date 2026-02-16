@@ -15,6 +15,11 @@ export async function GET() {
             email: true,
           },
         },
+        Category: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -38,7 +43,7 @@ export async function GET() {
       product.id,
       `"${product.name.replace(/"/g, '""')}"`, // Escape quotes
       product.price,
-      product.category,
+      product.Category.name,
       `"${product.smallDescription.replace(/"/g, '""')}"`,
       `${product.User.firstName} ${product.User.lastName}`,
       product.User.email,
