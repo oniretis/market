@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 interface CategoryItem {
-  id: number;
+  id: string;
   name: string;
   title: string;
   image: string;

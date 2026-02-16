@@ -24,7 +24,11 @@ export default async function ManageProductsRoute() {
       id: true,
       name: true,
       price: true,
-      category: true,
+      Category: {
+        select: {
+          name: true,
+        },
+      },
       images: true,
       phoneNumber: true,
       location: true,
@@ -37,6 +41,7 @@ export default async function ManageProductsRoute() {
   // Convert null values to undefined to match Product interface
   const formattedProducts = products.map(product => ({
     ...product,
+    category: product.Category.name,
     phoneNumber: product.phoneNumber || undefined,
     location: product.location || undefined,
     createdAt: product.createdAt.toISOString(),

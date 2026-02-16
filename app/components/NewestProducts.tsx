@@ -7,7 +7,11 @@ async function getData() {
     select: {
       price: true,
       smallDescription: true,
-      category: true,
+      Category: {
+        select: {
+          name: true,
+        },
+      },
       name: true,
       id: true,
       images: true,
