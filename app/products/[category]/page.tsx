@@ -1,41 +1,18 @@
 import { ProductCard } from "@/app/components/ProductCard";
 import prisma from "@/app/lib/db";
-import { type CategoryTypes } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 
 async function getData(category: string) {
-  let input: CategoryTypes | undefined;
-
-  switch (category) {
-    case "properties": {
-      input = "properties";
-      break;
-    }
-    case "gadgets": {
-      input = "gadgets";
-      break;
-    }
-    case "cars": {
-      input = "cars";
-      break;
-    }
-    case "others": {
-      input = "others";
-      break;
-    }
-    case "all": {
-      input = undefined;
-      break;
-    }
-    default: {
-      return notFound();
-    }
-  }
+  // Find category by name
+  const categoryRecord = category !== "all" ? await prisma.category.findUnique({
+    where: { name: category },
+    select: { id: true }
+  }) : null;
 
   const data = await prisma.product.findMany({
     where: {
-      ...(input && { category: input }),
+      ...(categoryRecord && { categoryId: categoryRecord.id }),
       status: "APPROVED",
     },
     select: {

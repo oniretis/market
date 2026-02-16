@@ -2,7 +2,6 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { ZodStringDef, z } from "zod";
 import prisma from "./lib/db";
-import { type CategoryTypes } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 export type State = {
@@ -124,7 +123,6 @@ export async function SellProduct(prevState: any, formData: FormData) {
   const data = await prisma.product.create({
     data: {
       name: validateFields.data.name,
-      category: validateFields.data.category as CategoryTypes,
       smallDescription: validateFields.data.smallDescription,
       price: validateFields.data.price,
       images: validateFields.data.images,
@@ -132,8 +130,17 @@ export async function SellProduct(prevState: any, formData: FormData) {
       phoneNumber: validateFields.data.phoneNumber,
       location: validateFields.data.location,
       listingType: validateFields.data.listingType,
-      userId: user.id,
       description: descriptionValue || {},
+      User: {
+        connect: {
+          id: dbUser.id,
+        },
+      },
+      Category: {
+        connect: {
+          name: validateFields.data.category,
+        },
+      },
     },
   });
 
@@ -182,18 +189,44 @@ export async function UpdateUserSettings(prevState: any, formData: FormData) {
 }
 
 export async function getCategories() {
-  const categories = await prisma.product.findMany({
-    select: {
-      category: true,
+  const categories = await prisma.category.findMany({
+    where: {
+      isActive: true,
     },
-    distinct: ['category'],
+    select: {
+      name: true,
+      id: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
   });
 
-  const uniqueCategories = Array.from(new Set(categories.map(c => c.category)));
+  return categories;
+}
 
-  return ["All", ...uniqueCategories.map(cat =>
-    cat.charAt(0).toUpperCase() + cat.slice(1)
-  )];
+export async function getCategoryItems() {
+  const categories = await prisma.category.findMany({
+    where: {
+      isActive: true,
+    },
+    select: {
+      name: true,
+      id: true,
+      icon: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  // Map to the format expected by SelectCategory component
+  return categories.map((category, index) => ({
+    id: category.id,
+    name: category.name,
+    title: category.name.charAt(0).toUpperCase() + category.name.slice(1),
+    image: category.icon || 'package', // Use the actual icon from database or default to 'package'
+  }));
 }
 
 export async function BuyProduct(formData: FormData) {

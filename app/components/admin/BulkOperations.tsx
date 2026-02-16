@@ -22,7 +22,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
+  category: string | { name: string; id: string };
   isSold: boolean;
   createdAt: string;
   User: {
@@ -293,7 +293,7 @@ export function BulkOperations() {
                         <div>
                           <h4 className="font-semibold">{product.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            ${product.price} • {product.category} • {product.User.firstName} {product.User.lastName}
+                            ₦{product.price} • {typeof product.category === 'string' ? product.category : product.category?.name || 'Unknown'} • {product.User.firstName} {product.User.lastName}
                           </p>
                         </div>
                       </div>

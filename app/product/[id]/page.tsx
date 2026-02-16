@@ -22,7 +22,11 @@ async function getData(id: string) {
       status: "APPROVED",
     },
     select: {
-      category: true,
+      Category: {
+        select: {
+          name: true,
+        },
+      },
       description: true,
       smallDescription: true,
       name: true,
@@ -115,7 +119,7 @@ export default async function ProductPage({
               Category:
             </h3>
 
-            <h3 className="text-sm font-medium col-span-1">{data?.category}</h3>
+            <h3 className="text-sm font-medium col-span-1">{data?.Category?.name}</h3>
 
             {data?.listingType && (
               <>

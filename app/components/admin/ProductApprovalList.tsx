@@ -4,7 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
+import Link from "next/link";
 import {
   CheckCircle,
   XCircle,
@@ -13,7 +19,10 @@ import {
   Package,
   DollarSign,
   User,
-  Calendar
+  Calendar,
+  Trash2,
+  Edit,
+  AlertTriangle
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "../ui/simple-toast";
@@ -39,12 +48,14 @@ interface Product {
   name: string;
   price: number;
   smallDescription: string;
-  category: string;
+  category: string | { name: string; id: string };
   images: string[];
   createdAt: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
   approvedAt?: string;
   approvedBy?: string;
+  phoneNumber?: string;
+  location?: string;
   User: {
     firstName: string;
     lastName: string;
@@ -56,6 +67,18 @@ export function ProductApprovalList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [editForm, setEditForm] = useState({
+    name: "",
+    price: "",
+    smallDescription: "",
+    category: "",
+    phoneNumber: "",
+    location: ""
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -63,9 +86,13 @@ export function ProductApprovalList() {
 
   const fetchProducts = async () => {
     try {
+      console.log('Fetching products from admin API...');
       const data = await apiRequest<{ products: Product[] }>('/api/admin/products');
+      console.log('API response:', data);
       setProducts(data.products || []);
+      console.log(`Set ${data.products?.length || 0} products`);
     } catch (error) {
+      console.error('Failed to fetch products:', error);
       toast.error('Failed to fetch products', 'Error');
     } finally {
       setLoading(false);
@@ -94,6 +121,59 @@ export function ProductApprovalList() {
     } catch (error) {
       // Error is already handled by apiRequest
     }
+  };
+
+  const handleDelete = async (productId: string) => {
+    try {
+      await apiRequest(`/api/admin/products/${productId}`, {
+        method: "DELETE",
+      });
+      toast.success('Product deleted successfully');
+      setDeleteDialogOpen(false);
+      setSelectedProduct(null);
+      fetchProducts(); // Refresh the list
+    } catch (error) {
+      // Error is already handled by apiRequest
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setSelectedProduct(product);
+    setEditForm({
+      name: product.name,
+      price: product.price.toString(),
+      smallDescription: product.smallDescription,
+      category: typeof product.category === 'string' ? product.category : product.category?.name || '',
+      phoneNumber: product.phoneNumber || "",
+      location: product.location || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      await apiRequest(`/api/admin/products/${selectedProduct.id}`, {
+        method: "PUT",
+        body: JSON.stringify(editForm),
+      });
+      toast.success('Product updated successfully');
+      setEditDialogOpen(false);
+      setSelectedProduct(null);
+      fetchProducts(); // Refresh the list
+    } catch (error) {
+      // Error is already handled by apiRequest
+    }
+  };
+
+  const openDeleteDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleImageError = (productId: string, imageIndex: number) => {
+    setImageErrors(prev => new Set(prev).add(`${productId}-${imageIndex}`));
   };
 
   const filteredProducts = products.filter(product => {
@@ -156,21 +236,14 @@ export function ProductApprovalList() {
                     <div className="flex items-start space-x-6">
                       {/* Product Image */}
                       <div className="flex-shrink-0">
-                        {product.images && product.images.length > 0 ? (
+                        {product.images && product.images.length > 0 && !imageErrors.has(`${product.id}-0`) ? (
                           <div className="relative h-24 w-24">
                             <Image
                               src={product.images[0]}
                               alt={product.name}
                               fill
                               className="rounded-lg object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  parent.innerHTML = '<div class="h-24 w-24 rounded-lg bg-gray-200 flex items-center justify-center"><svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>';
-                                }
-                              }}
+                              onError={() => handleImageError(product.id, 0)}
                             />
                           </div>
                         ) : (
@@ -195,11 +268,11 @@ export function ProductApprovalList() {
                             <div className="flex items-center space-x-4 mt-3">
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <DollarSign className="h-4 w-4 mr-1" />
-                                ${product.price}
+                                ₦{product.price}
                               </div>
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Package className="h-4 w-4 mr-1" />
-                                {product.category}
+                                {typeof product.category === 'string' ? product.category : product.category?.name || 'Unknown'}
                               </div>
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4 mr-1" />
@@ -213,10 +286,28 @@ export function ProductApprovalList() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(`/product/${product.id}`, '_blank')}
+                              asChild
                             >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
+                              <Link href={`/admin/products/${product.id}`}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(product)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => openDeleteDialog(product)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
                             </Button>
                             {product.status === "PENDING" && (
                               <>
@@ -258,6 +349,130 @@ export function ProductApprovalList() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Delete Product
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{selectedProduct?.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedProduct && handleDelete(selectedProduct.id)}
+            >
+              Delete Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>
+              Update the product information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Price (₦)
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                value={editForm.price}
+                onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Category
+              </Label>
+              <Select
+                value={editForm.category}
+                onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="properties">Properties</SelectItem>
+                  <SelectItem value="gadgets">Gadgets</SelectItem>
+                  <SelectItem value="cars">Cars</SelectItem>
+                  <SelectItem value="others">Others</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={editForm.smallDescription}
+                onChange={(e) => setEditForm({ ...editForm, smallDescription: e.target.value })}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone Number
+              </Label>
+              <Input
+                id="phone"
+                value={editForm.phoneNumber}
+                onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location" className="text-right">
+                Location
+              </Label>
+              <Input
+                id="location"
+                value={editForm.location}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate}>
+              Update Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

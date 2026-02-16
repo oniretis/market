@@ -10,11 +10,17 @@ interface iAppProps {
 }
 
 async function getData({ category }: iAppProps) {
+  // Find the category by name
+  const categoryRecord = category !== "newest" ? await prisma.category.findUnique({
+    where: { name: category },
+    select: { id: true }
+  }) : null;
+
   switch (category) {
     case "others": {
       const data = await prisma.product.findMany({
         where: {
-          category: "others",
+          categoryId: categoryRecord?.id,
           status: "APPROVED",
         },
         select: {
@@ -68,7 +74,7 @@ async function getData({ category }: iAppProps) {
     case "properties": {
       const data = await prisma.product.findMany({
         where: {
-          category: "properties",
+          categoryId: categoryRecord?.id,
           status: "APPROVED",
         },
         select: {
@@ -94,7 +100,7 @@ async function getData({ category }: iAppProps) {
     case "gadgets": {
       const data = await prisma.product.findMany({
         where: {
-          category: "gadgets",
+          categoryId: categoryRecord?.id,
           status: "APPROVED",
         },
         select: {
@@ -120,7 +126,7 @@ async function getData({ category }: iAppProps) {
     case "cars": {
       const data = await prisma.product.findMany({
         where: {
-          category: "cars",
+          categoryId: categoryRecord?.id,
           status: "APPROVED",
         },
         select: {

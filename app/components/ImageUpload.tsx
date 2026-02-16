@@ -30,8 +30,29 @@ export function ImageUpload({
 
   const handleUploadComplete = useCallback((res: any[]) => {
     console.log("Upload completed - raw response:", res);
-    const newUrls = res.map((item) => item.url);
-    console.log("Extracted URLs:", newUrls);
+    console.log("Response structure:", JSON.stringify(res, null, 2));
+
+    if (!res || res.length === 0) {
+      console.error("No files in upload response");
+      toast.error("Upload failed: No files received");
+      return;
+    }
+
+    const newUrls = res.map((item, index) => {
+      console.log(`Processing item ${index}:`, item);
+      const url = item.url || item.data?.url || item.fileUrl;
+      console.log(`Extracted URL ${index}:`, url);
+      return url;
+    }).filter(url => url); // Filter out any undefined URLs
+
+    console.log("Valid URLs extracted:", newUrls);
+
+    if (newUrls.length === 0) {
+      console.error("No valid URLs found in upload response");
+      toast.error("Upload failed: No valid URLs received");
+      return;
+    }
+
     const updatedUrls = [...value, ...newUrls].slice(0, maxFiles);
     console.log("Final URLs after update:", updatedUrls);
     onChange(updatedUrls);
@@ -79,6 +100,34 @@ export function ImageUpload({
 
   return (
     <div className={cn("space-y-4", className)}>
+
+      {/* Debug Panel */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <h4 className="text-sm font-medium mb-2">Debug Info</h4>
+            <div className="text-xs space-y-1">
+              <p>Current URLs count: {value.length}</p>
+              {value.length > 0 && (
+                <div className="space-y-1">
+                  <p>URLs:</p>
+                  {value.map((url, index) => (
+                    <div key={index} className="bg-white p-2 rounded border">
+                      <p className="font-mono break-all">{url}</p>
+                      <button
+                        onClick={() => window.open(url, '_blank')}
+                        className="text-blue-500 hover:underline text-xs"
+                      >
+                        Test in new tab
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upload Area */}
       {!isMaxFilesReached && (
@@ -130,20 +179,15 @@ export function ImageUpload({
                       src={url}
                       alt={`Upload ${index + 1}`}
                       fill
-                      className="object-cover"
-                      onError={(e) => {
-                        console.error("Image failed to load:", url);
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="aspect-square bg-gray-200 flex items-center justify-center"><svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
-                        }
-                      }}
-                      onLoad={() => {
-                        console.log("Image loaded successfully:", url);
-                      }}
+                      className="object-cover rounded-md"
                     />
+
+                    {/* Fallback: Show URL text if image fails */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-gray-100/90 transition-opacity">
+                      <div className="text-xs text-center p-2 break-all">
+                        <div className="font-mono text-gray-600">{url}</div>
+                      </div>
+                    </div>
 
                     {/* Overlay with controls */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200">

@@ -88,7 +88,7 @@ export function RevenueAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(revenueData.totalRevenue || 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">₦{(revenueData.totalRevenue || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               All time revenue
             </p>
@@ -101,17 +101,17 @@ export function RevenueAnalytics() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(revenueData.monthlyStats.currentMonth || 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">₦{(revenueData.monthlyStats?.currentMonth || 0).toLocaleString()}</div>
             <p className="text-xs flex items-center">
-              {revenueData.monthlyStats.growth >= 0 ? (
+              {(revenueData.monthlyStats?.growth ?? 0) >= 0 ? (
                 <>
                   <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
-                  <span className="text-green-600">+{revenueData.monthlyStats.growth}%</span>
+                  <span className="text-green-600">+{revenueData.monthlyStats?.growth || 0}%</span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="h-3 w-3 mr-1 text-red-600" />
-                  <span className="text-red-600">{revenueData.monthlyStats.growth}%</span>
+                  <span className="text-red-600">{revenueData.monthlyStats?.growth || 0}%</span>
                 </>
               )}
               <span className="text-muted-foreground ml-1">from last month</span>
@@ -125,7 +125,7 @@ export function RevenueAnalytics() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(revenueData.monthlyStats.lastMonth || 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">₦{(revenueData.monthlyStats?.lastMonth || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Previous month revenue
             </p>
@@ -139,7 +139,7 @@ export function RevenueAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${revenueData.monthlyStats.currentMonth > 0
+              ₦{revenueData.monthlyStats?.currentMonth > 0
                 ? Math.round(revenueData.monthlyStats.currentMonth / 10) // Placeholder calculation
                 : 0}
             </div>
@@ -170,7 +170,7 @@ export function RevenueAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {revenueData.topSellingProducts.length === 0 ? (
+                {(!revenueData.topSellingProducts || revenueData.topSellingProducts.length === 0) ? (
                   <div className="text-center py-8">
                     <Package className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h3 className="mt-2 text-sm font-semibold">No sales data</h3>
@@ -188,14 +188,14 @@ export function RevenueAnalytics() {
                         <div>
                           <h4 className="font-semibold">{product.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {product.soldCount} sold × ${product.price}
+                            {product.soldCount} sold × ₦{product.price}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">${(product.revenue || 0).toLocaleString()}</p>
+                        <p className="font-semibold">₦{(product.revenue || 0).toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground">
-                          {Math.round((product.revenue / revenueData.totalRevenue) * 100)}% of total
+                          {revenueData.totalRevenue > 0 ? Math.round((product.revenue / revenueData.totalRevenue) * 100) : 0}% of total
                         </p>
                       </div>
                     </div>
@@ -219,27 +219,37 @@ export function RevenueAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {revenueData.categoryRevenue.map((category) => (
-                  <div key={category.category} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm">
-                        {category.category.charAt(0).toUpperCase()}
+                {(!revenueData.categoryRevenue || revenueData.categoryRevenue.length === 0) ? (
+                  <div className="text-center py-8">
+                    <PieChart className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-2 text-sm font-semibold">No category data</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      No revenue data available for categories.
+                    </p>
+                  </div>
+                ) : (
+                  revenueData.categoryRevenue.map((category) => (
+                    <div key={category.category} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm">
+                          {category.category.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold capitalize">{category.category}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {category.count} products
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold capitalize">{category.category}</h4>
+                      <div className="text-right">
+                        <p className="font-semibold">₦{(category.revenue || 0).toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground">
-                          {category.count} products
+                          {revenueData.totalRevenue > 0 ? Math.round((category.revenue / revenueData.totalRevenue) * 100) : 0}% of total
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${(category.revenue || 0).toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {Math.round((category.revenue / revenueData.totalRevenue) * 100)}% of total
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -259,26 +269,37 @@ export function RevenueAnalytics() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {revenueData.monthlyRevenue.slice(-6).map((revenue, index) => {
-                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const currentMonth = new Date().getMonth();
-                    const monthIndex = (currentMonth - 5 + index + 12) % 12;
+                  {(!revenueData.monthlyRevenue || revenueData.monthlyRevenue.length === 0) ? (
+                    <div className="col-span-2 text-center py-8">
+                      <Activity className="mx-auto h-12 w-12 text-muted-foreground" />
+                      <h3 className="mt-2 text-sm font-semibold">No revenue trends</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        No monthly revenue data available.
+                      </p>
+                    </div>
+                  ) : (
+                    revenueData.monthlyRevenue.slice(-6).map((revenue, index) => {
+                      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                      const currentMonth = new Date().getMonth();
+                      const monthIndex = (currentMonth - 5 + index + 12) % 12;
+                      const maxRevenue = Math.max(...revenueData.monthlyRevenue.filter(r => r > 0), 1);
 
-                    return (
-                      <div key={index} className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold">{monthNames[monthIndex]}</h4>
-                          <p className="font-bold">${(revenue || 0).toLocaleString()}</p>
+                      return (
+                        <div key={index} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold">{monthNames[monthIndex]}</h4>
+                            <p className="font-bold">₦{(revenue || 0).toLocaleString()}</p>
+                          </div>
+                          <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full"
+                              style={{ width: `${Math.min(((revenue || 0) / maxRevenue) * 100, 100)}%` }}
+                            ></div>
+                          </div>
                         </div>
-                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${Math.min((revenue / Math.max(...revenueData.monthlyRevenue)) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </CardContent>

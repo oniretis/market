@@ -38,7 +38,7 @@ interface RecentActivity {
   id: string;
   action: string;
   description: string;
-  user: {
+  User: {
     firstName: string;
     lastName: string;
   };
@@ -123,7 +123,7 @@ export function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(stats.totalRevenue || 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">₦{(stats.totalRevenue || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               +{stats.monthlyGrowth.revenue}% from last month
             </p>
@@ -223,7 +223,7 @@ export function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Avg. Product Price</span>
                   <span className="text-sm text-muted-foreground">
-                    ${stats.totalProducts > 0 ? Math.round(stats.totalRevenue / stats.totalProducts) : 0}
+                    ₦{stats.totalProducts > 0 ? Math.round(stats.totalRevenue / stats.totalProducts) : 0}
                   </span>
                 </div>
               </CardContent>
@@ -268,7 +268,7 @@ export function AdminDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-muted-foreground">
-                          {activity.user.firstName} {activity.user.lastName}
+                          {activity.User?.firstName} {activity.User?.lastName}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {activity.createdAt ? new Date(activity.createdAt).toLocaleString() : 'N/A'}

@@ -11,7 +11,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
+  category: string | { name: string; id: string };
   images: string[];
   phoneNumber?: string;
   location?: string;
@@ -78,7 +78,9 @@ export function ProductManager({ products, onProductSold }: ProductManagerProps)
               </div>
               <div>
                 <p className="text-sm font-medium">Category</p>
-                <p className="capitalize">{product.category}</p>
+                <p className="capitalize">
+                  {typeof product.category === 'string' ? product.category : product.category?.name || 'Unknown'}
+                </p>
               </div>
               {product.phoneNumber && (
                 <div>

@@ -9,19 +9,20 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getCategories } from "@/app/actions";
 
+const defaultImages = [
+  "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1974&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1974&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?q=80&w=1974&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1974&auto=format&fit=crop",
+].slice(0, 5); // Ensure max 5 default images
+
 export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categories, setCategories] = useState<string[]>(["All", "Properties", "Cars", "Mobiles"]);
   const [carouselImages, setCarouselImages] = useState<string[]>([]);
   const [carouselLinks, setCarouselLinks] = useState<string[]>([]);
+  const [imageError, setImageError] = useState(false);
   const router = useRouter();
-
-  const defaultImages = [
-    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1974&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1974&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?q=80&w=1974&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1974&auto=format&fit=crop",
-  ].slice(0, 5); // Ensure max 5 default images
 
   const counters = [
     { value: "1,500 +", label: "Properties" },
@@ -82,7 +83,7 @@ export default function Hero() {
     };
 
     fetchAdvertisements();
-  }, [defaultImages]);
+  }, []);
 
   // Reset currentIndex when carouselImages changes to prevent out-of-bounds
   useEffect(() => {
@@ -108,7 +109,11 @@ export default function Hero() {
     const fetchCategories = async () => {
       try {
         const fetchedCategories = await getCategories();
-        setCategories(fetchedCategories);
+        // Extract category names from the array of objects
+        const categoryNames = fetchedCategories.map((cat: any) =>
+          typeof cat === 'string' ? cat : cat.name || cat
+        );
+        setCategories(categoryNames);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
         // Keep default categories if fetch fails
@@ -132,22 +137,23 @@ export default function Hero() {
       <div className="relative rounded-2xl border border-dashed">
         <div className="relative">
           <div className="relative overflow-hidden rounded-2xl rounded-b-none h-[420px]">
-            <Image
-              src={carouselImages[currentIndex]}
-              alt={`Hero slide ${currentIndex + 1}`}
-              fill
-              className={`object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''
-                }`}
-              onClick={handleImageClick}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.innerHTML = '<div class="h-[420px] bg-gray-200 flex items-center justify-center"><svg class="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
-                }
-              }}
-            />
+            {!imageError && carouselImages[currentIndex] ? (
+              <Image
+                src={carouselImages[currentIndex]}
+                alt={`Hero slide ${currentIndex + 1}`}
+                fill
+                className={`object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''
+                  }`}
+                onClick={handleImageClick}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="h-[420px] bg-gray-200 flex items-center justify-center">
+                <svg className="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+            )}
 
             {/* Navigation buttons */}
             <button

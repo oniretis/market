@@ -40,7 +40,7 @@ export function Footer() {
             </div>
 
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Discover quality digital products from creators around the world.
+              Discover quality heywhymarketplace products from people around the world.
             </p>
 
             <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                support@digitalmarket.com
+                support@heywhymarketplace.com
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />

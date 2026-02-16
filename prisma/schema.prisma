@@ -25,6 +25,19 @@ model User {
   Advertisement Advertisement[]
 }
 
+model Category {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+  icon        String?
+  color       String @default("#3B82F6")
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Product Product[]
+}
+
 model Product {
   id               String          @id @default(uuid())
   name             String
@@ -33,7 +46,7 @@ model Product {
   description      Json
   images           String[]
   productVideo     String?
-  category         CategoryTypes
+  categoryId       String
   phoneNumber      String?
   location         String?
   listingType      ListingType     @default(MARKET)
@@ -47,15 +60,9 @@ model Product {
 
   User     User      @relation(fields: [userId], references: [id])
   userId   String
+  Category Category  @relation(fields: [categoryId], references: [id])
   Review   Review[]
   Tag      ProductTag[]
-}
-
-enum CategoryTypes {
-  properties
-  gadgets
-  cars
-  others
 }
 
 enum ListingType {
@@ -128,8 +135,10 @@ model Activity {
 enum ActivityType {
   USER_REGISTERED
   PRODUCT_CREATED
+  PRODUCT_UPDATED
   PRODUCT_APPROVED
   PRODUCT_REJECTED
+  PRODUCT_DELETED
   PRODUCT_SOLD
   REVIEW_CREATED
   USER_BANNED

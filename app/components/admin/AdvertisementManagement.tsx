@@ -12,6 +12,7 @@ import Image from "next/image";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Edit, Plus, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUpload } from "../ImageUpload";
 
 interface Advertisement {
   id: string;
@@ -38,7 +39,7 @@ export default function AdvertisementManagement() {
   const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
   const [formData, setFormData] = useState({
     title: "",
-    imageUrl: "",
+    imageUrls: [] as string[],
     linkUrl: "",
     description: "",
     isActive: true,
@@ -69,7 +70,7 @@ export default function AdvertisementManagement() {
   const resetForm = () => {
     setFormData({
       title: "",
-      imageUrl: "",
+      imageUrls: [],
       linkUrl: "",
       description: "",
       isActive: true,
@@ -83,6 +84,11 @@ export default function AdvertisementManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (formData.imageUrls.length === 0) {
+      toast.error("Please upload at least one image");
+      return;
+    }
+
     try {
       const url = editingAd ? `/api/admin/ads/${editingAd.id}` : "/api/admin/ads";
       const method = editingAd ? "PUT" : "POST";
@@ -92,7 +98,10 @@ export default function AdvertisementManagement() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          imageUrl: formData.imageUrls[0] // Use first image as primary
+        }),
       });
 
       if (response.ok) {
@@ -114,7 +123,7 @@ export default function AdvertisementManagement() {
     setEditingAd(ad);
     setFormData({
       title: ad.title,
-      imageUrl: ad.imageUrl,
+      imageUrls: ad.imageUrl ? [ad.imageUrl] : [],
       linkUrl: ad.linkUrl || "",
       description: ad.description || "",
       isActive: ad.isActive,
@@ -158,11 +167,11 @@ export default function AdvertisementManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 h-full overflow-y-auto">
+      <div className="flex justify-between items-center sticky top-0 bg-background/95 backdrop-blur-sm z-10 pb-4">
         <div>
-          <h1 className="text-3xl font-bold">Advertisement Management</h1>
-          <p className="text-muted-foreground">Manage carousel advertisements displayed on the homepage</p>
+          <h1 className="text-2xl font-bold">Advertisement Management</h1>
+          <p className="text-sm text-muted-foreground">Manage carousel advertisements displayed on the homepage</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -171,98 +180,111 @@ export default function AdvertisementManagement() {
               Add Advertisement
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingAd ? "Edit Advertisement" : "Create New Advertisement"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="title">Title *</Label>
+                  <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
+                    className="h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="position">Position</Label>
+                  <Label htmlFor="position" className="text-sm font-medium">Position</Label>
                   <Input
                     id="position"
                     type="number"
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value) || 0 })}
+                    className="h-10"
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="imageUrl">Image URL *</Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  required
-                />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Advertisement Image *</Label>
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <ImageUpload
+                    value={formData.imageUrls}
+                    onChange={(urls) => setFormData({ ...formData, imageUrls: urls })}
+                    maxFiles={1}
+                    className="border-0 bg-transparent"
+                  />
+                </div>
+                {formData.imageUrls.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Please upload an image for the advertisement
+                  </p>
+                )}
               </div>
 
-              <div>
-                <Label htmlFor="linkUrl">Link URL (optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="linkUrl" className="text-sm font-medium">Link URL (optional)</Label>
                 <Input
                   id="linkUrl"
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
                   placeholder="https://example.com/product"
+                  className="h-10"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description (optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Brief description of the advertisement"
+                  className="resize-none"
+                  rows={3}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="startDate">Start Date (optional)</Label>
+                  <Label htmlFor="startDate" className="text-sm font-medium">Start Date (optional)</Label>
                   <Input
                     id="startDate"
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="endDate">End Date (optional)</Label>
+                  <Label htmlFor="endDate" className="text-sm font-medium">End Date (optional)</Label>
                   <Input
                     id="endDate"
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="h-10"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 py-2">
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
                   onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
                 />
-                <Label htmlFor="isActive">Active</Label>
+                <Label htmlFor="isActive" className="text-sm font-medium">Active</Label>
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="h-10">
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="h-10">
                   {editingAd ? "Update" : "Create"} Advertisement
                 </Button>
               </div>
@@ -271,16 +293,16 @@ export default function AdvertisementManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {ads.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-8">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold">No advertisements yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center p-12">
+              <ImageIcon className="h-16 w-16 text-muted-foreground/50 mb-6" />
+              <h3 className="text-xl font-semibold mb-2">No advertisements yet</h3>
+              <p className="text-muted-foreground text-center mb-6 max-w-md">
                 Create your first advertisement to display in the homepage carousel
               </p>
-              <Button onClick={openCreateDialog}>
+              <Button onClick={openCreateDialog} className="h-11">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Advertisement
               </Button>
@@ -288,23 +310,42 @@ export default function AdvertisementManagement() {
           </Card>
         ) : (
           ads.map((ad) => (
-            <Card key={ad.id}>
+            <Card key={ad.id} className="hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold">{ad.title}</h3>
-                      <Badge variant={ad.isActive ? "default" : "secondary"}>
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-muted">
+                      <Image
+                        src={ad.imageUrl}
+                        alt={ad.title}
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="h-20 w-20 rounded-lg bg-muted flex items-center justify-center"><svg class="h-8 w-8 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-lg font-semibold truncate">{ad.title}</h3>
+                      <Badge variant={ad.isActive ? "default" : "secondary"} className="shrink-0">
                         {ad.isActive ? "Active" : "Inactive"}
                       </Badge>
-                      <Badge variant="outline">Position {ad.position}</Badge>
+                      <Badge variant="outline" className="shrink-0">Position {ad.position}</Badge>
                     </div>
 
                     {ad.description && (
-                      <p className="text-muted-foreground mb-2">{ad.description}</p>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{ad.description}</p>
                     )}
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                    <div className="flex items-center gap-6 text-xs text-muted-foreground mb-4">
                       <span>Created: {new Date(ad.createdAt).toLocaleDateString()}</span>
                       {ad.startDate && (
                         <span>Start: {new Date(ad.startDate).toLocaleDateString()}</span>
@@ -315,35 +356,10 @@ export default function AdvertisementManagement() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="relative h-16 w-16">
-                          <Image
-                            src={ad.imageUrl}
-                            alt={ad.title}
-                            fill
-                            className="object-cover rounded"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = '<div class="h-16 w-16 rounded bg-gray-200 flex items-center justify-center"><svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
-                              }
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Image Preview</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                            {ad.imageUrl}
-                          </p>
-                        </div>
-                      </div>
-
                       {ad.linkUrl && (
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="outline" size="sm" asChild className="h-8">
                           <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
+                            <ExternalLink className="h-3 w-3 mr-2" />
                             Visit Link
                           </a>
                         </Button>
@@ -351,12 +367,12 @@ export default function AdvertisementManagement() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(ad)}>
-                      <Edit className="h-4 w-4" />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(ad)} className="h-8 w-8 p-0">
+                      <Edit className="h-3 w-3" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(ad.id)}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(ad.id)} className="h-8 w-8 p-0">
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
