@@ -13,7 +13,11 @@ export async function GET() {
         id: true,
         name: true,
         price: true,
-        category: true,
+        Category: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -22,11 +26,12 @@ export async function GET() {
 
     // Group by category
     const categoryRevenue = soldProducts.reduce((acc, product) => {
-      if (!acc[product.category]) {
-        acc[product.category] = { revenue: 0, count: 0 };
+      const categoryName = product.Category.name;
+      if (!acc[categoryName]) {
+        acc[categoryName] = { revenue: 0, count: 0 };
       }
-      acc[product.category].revenue += product.price;
-      acc[product.category].count += 1;
+      acc[categoryName].revenue += product.price;
+      acc[categoryName].count += 1;
       return acc;
     }, {} as Record<string, { revenue: number; count: number }>);
 
