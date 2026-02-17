@@ -41,8 +41,19 @@ export async function GET() {
   }
 
   try {
-    await requireAdmin();
+    // Use the same authentication as the working auth test
+    const { getCurrentUser } = await import("@/app/lib/admin");
+    const user = await getCurrentUser();
 
+    if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+      console.log('Dashboard API: Access denied. User role:', user?.role);
+      return NextResponse.json(
+        { error: `Admin access required. Current role: ${user?.role || 'NONE'}` },
+        { status: 401 }
+      );
+    }
+
+    console.log('Dashboard API: Access granted for user:', user.email);
     console.log('Dashboard API: Fetching data from database...');
 
     // Test database connection first
