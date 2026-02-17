@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable OpenTelemetry tracing to prevent Vercel conflicts
+  experimental: {
+    instrumentationHook: false,
+    serverComponentsExternalPackages: ['@opentelemetry/api'],
+  },
+  // Disable telemetry
+  telemetry: false,
   images: {
     remotePatterns: [
       {
