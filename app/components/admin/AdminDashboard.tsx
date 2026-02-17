@@ -53,7 +53,6 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     try {
@@ -100,90 +99,10 @@ export function AdminDashboard() {
     }
   }, []);
 
-  // Set up Server-Sent Events for real-time updates with fallback polling
+  // Load data on component mount
   useEffect(() => {
     fetchDashboardData();
-
-    const connectSSE = () => {
-      setConnectionStatus('connecting');
-      const eventSource = new EventSource("/api/admin/dashboard/stream");
-
-      eventSource.onopen = () => {
-        setConnectionStatus('connected');
-        console.log('SSE connection established');
-      };
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.error) {
-            console.error('SSE Error:', data.error);
-            return;
-          }
-          if (data.build) {
-            // Ignore build-time messages
-            return;
-          }
-          setStats(data.stats);
-          setRecentActivity(data.recentActivity);
-          setLastUpdated(new Date(data.timestamp));
-          console.log('Dashboard updated via SSE:', new Date(data.timestamp));
-        } catch (error) {
-          console.error('Error parsing SSE data:', error);
-        }
-      };
-
-      eventSource.onerror = (error) => {
-        console.error('SSE connection error, falling back to polling', error);
-        setConnectionStatus('disconnected');
-
-        // Close the current event source
-        eventSource.close();
-
-        // Wait 3 seconds before attempting reconnection
-        setTimeout(() => {
-          if (document.visibilityState === 'visible') {
-            console.log('Attempting to reconnect SSE...');
-            connectSSE();
-          }
-        }, 3000);
-
-        // Fallback to polling if SSE fails
-        const pollingInterval = setInterval(() => {
-          if (document.visibilityState === 'visible') {
-            fetchDashboardData();
-          }
-        }, 60000);
-
-        // Cleanup polling on reconnection
-        return () => {
-          clearInterval(pollingInterval);
-        };
-      };
-
-      return eventSource;
-    };
-
-    const eventSource = connectSSE();
-
-    // Handle visibility changes to pause/resume SSE
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && connectionStatus === 'disconnected') {
-        console.log('Tab became visible, reconnecting SSE...');
-        connectSSE();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Cleanup function
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [fetchDashboardData, connectionStatus]);
+  }, [fetchDashboardData]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-full">Loading dashboard...</div>;
@@ -203,9 +122,6 @@ export function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={connectionStatus === 'connected' ? 'default' : connectionStatus === 'connecting' ? 'secondary' : 'destructive'}>
-            {connectionStatus === 'connected' ? 'Live' : connectionStatus === 'connecting' ? 'Connecting...' : 'Offline'}
-          </Badge>
           <Button
             variant="outline"
             size="sm"
