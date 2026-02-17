@@ -9,60 +9,133 @@ datasource db {
 }
 
 model User {
-  id           String  @id @unique
-  email        String
-  firstName    String
-  lastName     String
-  profileImage String
-  role         UserRole @default(USER)
-  isActive     Boolean @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  Product   Product[]
-  Review    Review[]
-  Activity  Activity[]
+  id            String          @id @unique
+  email         String
+  firstName     String
+  lastName      String
+  profileImage  String
+  createdAt     DateTime        @default(now())
+  isActive      Boolean         @default(true)
+  role          UserRole        @default(USER)
+  updatedAt     DateTime        @updatedAt
+  Activity      Activity[]
   Advertisement Advertisement[]
+  Product       Product[]
+  Review        Review[]
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 model Category {
-  id          String @id @default(uuid())
-  name        String @unique
+  id          String    @id @default(uuid())
+  name        String    @unique
   description String?
   icon        String?
-  color       String @default("#3B82F6")
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  Product Product[]
+  color       String    @default("#3B82F6")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Product     Product[]
 }
 
 model Product {
-  id               String          @id @default(uuid())
+  id               String        @id @default(uuid())
   name             String
   price            Int
   smallDescription String
   description      Json
   images           String[]
+  createdAt        DateTime      @default(now())
+  userId           String
   productVideo     String?
-  categoryId       String
-  phoneNumber      String?
-  location         String?
-  listingType      ListingType     @default(MARKET)
-  revenue          Int             @default(0)
-  isSold           Boolean         @default(false)
-  status           ProductStatus   @default(PENDING)
   approvedAt       DateTime?
   approvedBy       String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  isSold           Boolean       @default(false)
+  listingType      ListingType   @default(MARKET)
+  location         String?
+  phoneNumber      String?
+  revenue          Int           @default(0)
+  status           ProductStatus @default(PENDING)
+  updatedAt        DateTime      @updatedAt
+  categoryId       String
+  Category         Category      @relation(fields: [categoryId], references: [id])
+  User             User          @relation(fields: [userId], references: [id])
+  Tag              ProductTag[]
+  Review           Review[]
 
-  User     User      @relation(fields: [userId], references: [id])
-  userId   String
-  Category Category  @relation(fields: [categoryId], references: [id])
-  Review   Review[]
-  Tag      ProductTag[]
+  @@index([status])
+  @@index([createdAt])
+  @@index([isSold])
+  @@index([status, createdAt])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int      @default(5)
+  comment    String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String
+  productId  String
+  Product    Product  @relation(fields: [productId], references: [id])
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@index([isApproved])
+  @@index([createdAt])
+}
+
+model Tag {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  color       String       @default("#3B82F6")
+  createdAt   DateTime     @default(now())
+  ProductTag  ProductTag[]
+}
+
+model ProductTag {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  productId String
+  tagId     String
+  Product   Product  @relation(fields: [productId], references: [id])
+  Tag       Tag      @relation(fields: [tagId], references: [id])
+
+  @@unique([productId, tagId])
+}
+
+model Activity {
+  id          String       @id @default(uuid())
+  action      ActivityType
+  description String
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime     @default(now())
+  userId      String
+  User        User         @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model Advertisement {
+  id          String    @id @default(uuid())
+  title       String
+  imageUrl    String
+  linkUrl     String?
+  description String?
+  isActive    Boolean   @default(true)
+  position    Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String
+  User        User      @relation(fields: [createdBy], references: [id])
 }
 
 enum ListingType {
@@ -83,87 +156,21 @@ enum ProductStatus {
   FLAGGED
 }
 
-model Review {
-  id        String   @id @default(uuid())
-  rating    Int      @default(5)
-  comment   String?
-  isApproved Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  User     User     @relation(fields: [userId], references: [id])
-  userId   String
-  Product  Product  @relation(fields: [productId], references: [id])
-  productId String
-}
-
-model Tag {
-  id          String @id @default(uuid())
-  name        String @unique
-  description String?
-  color       String @default("#3B82F6")
-  createdAt   DateTime @default(now())
-
-  ProductTag ProductTag[]
-}
-
-model ProductTag {
-  id        String @id @default(uuid())
-  createdAt DateTime @default(now())
-
-  Product Product @relation(fields: [productId], references: [id])
-  productId String
-  Tag     Tag     @relation(fields: [tagId], references: [id])
-  tagId   String
-
-  @@unique([productId, tagId])
-}
-
-model Activity {
-  id          String       @id @default(uuid())
-  action      ActivityType
-  description String
-  metadata    Json?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime     @default(now())
-
-  User   User   @relation(fields: [userId], references: [id])
-  userId String
-}
-
 enum ActivityType {
   USER_REGISTERED
   PRODUCT_CREATED
-  PRODUCT_UPDATED
   PRODUCT_APPROVED
   PRODUCT_REJECTED
-  PRODUCT_DELETED
   PRODUCT_SOLD
   REVIEW_CREATED
   USER_BANNED
   USER_UNBANNED
-  ROLE_CHANGED
   LOGIN
   LOGOUT
+  ROLE_CHANGED
   AD_CREATED
   AD_UPDATED
   AD_DELETED
-}
-
-model Advertisement {
-  id          String       @id @default(uuid())
-  title       String
-  imageUrl    String
-  linkUrl     String?
-  description String?
-  isActive    Boolean      @default(true)
-  position    Int          @default(0)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  User   User   @relation(fields: [createdBy], references: [id])
-  createdBy String
+  PRODUCT_UPDATED
+  PRODUCT_DELETED
 }

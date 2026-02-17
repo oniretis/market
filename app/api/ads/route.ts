@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/db";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const now = new Date();

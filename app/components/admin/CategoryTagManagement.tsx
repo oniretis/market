@@ -173,6 +173,7 @@ export function CategoryTagManagement() {
       });
 
       if (response.ok) {
+        alert("Category successfully deleted");
         fetchData(); // Refresh the list
       }
     } catch (error) {

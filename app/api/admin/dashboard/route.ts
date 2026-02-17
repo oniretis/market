@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+// Simple in-memory cache (in production, use Redis)
+const dashboardCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 30 * 1000; // 30 seconds
+
+function getCachedData(key: string): any | null {
+  const cached = dashboardCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any): void {
+  dashboardCache.set(key, { data, timestamp: Date.now() });
+}
+
 export async function GET() {
   // Skip authentication during build/static generation but still fetch real data
   const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
@@ -56,6 +75,14 @@ export async function GET() {
     console.log('Dashboard API: Access granted for user:', user.email);
     console.log('Dashboard API: Fetching data from database...');
 
+    // Check cache first
+    const cacheKey = `dashboard_${user.id}`;
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      console.log('Dashboard API: Returning cached data');
+      return NextResponse.json(cachedData);
+    }
+
     // Test database connection first
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -68,35 +95,65 @@ export async function GET() {
       );
     }
 
-    // Use Prisma's transaction for better performance and consistency
+    // Optimized single query approach for better performance
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    // Single comprehensive query with all aggregations
     const [
-      totalUsers,
-      totalProducts,
-      pendingProducts,
-      approvedProducts,
-      rejectedProducts,
-      totalReviews,
-      pendingReviews,
-      productStats,
+      statsData,
+      monthlyData,
       recentActivity
     ] = await Promise.all([
-      // Basic counts
-      prisma.user.count(),
-      prisma.product.count(),
-      prisma.product.count({ where: { status: "PENDING" } }),
-      prisma.product.count({ where: { status: "APPROVED" } }),
-      prisma.product.count({ where: { status: "REJECTED" } }),
-      prisma.review.count(),
-      prisma.review.count({ where: { isApproved: false } }),
+      // Main stats query
+      prisma.$transaction([
+        prisma.user.count(),
+        prisma.product.count(),
+        prisma.product.count({ where: { status: "PENDING" } }),
+        prisma.product.count({ where: { status: "APPROVED" } }),
+        prisma.product.count({ where: { status: "REJECTED" } }),
+        prisma.review.count(),
+        prisma.review.count({ where: { isApproved: false } }),
+        prisma.product.aggregate({
+          _sum: { price: true },
+          _count: { isSold: true },
+          where: { isSold: true }
+        })
+      ]),
 
-      // Aggregate queries for performance
-      prisma.product.aggregate({
-        _sum: { price: true },
-        _count: { isSold: true },
-        where: { isSold: true }
-      }),
+      // Monthly data in single query
+      prisma.$transaction([
+        prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: sixtyDaysAgo,
+              lt: thirtyDaysAgo
+            }
+          }
+        }),
+        prisma.product.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+        prisma.product.count({
+          where: {
+            createdAt: {
+              gte: sixtyDaysAgo,
+              lt: thirtyDaysAgo
+            }
+          }
+        }),
+        prisma.product.aggregate({
+          where: {
+            createdAt: { gte: thirtyDaysAgo },
+            status: "APPROVED"
+          },
+          _sum: { price: true }
+        })
+      ]),
 
-      // Recent activity with limited fields
+      // Recent activity
       prisma.activity.findMany({
         select: {
           id: true,
@@ -115,16 +172,17 @@ export async function GET() {
       })
     ]);
 
-    // Calculate values from aggregated data
-    const totalRevenue = productStats._sum.price || 0;
-    const soldProducts = productStats._count.isSold;
-
-    // Get monthly growth data in parallel
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    // Extract values from transaction results
+    const [
+      totalUsers,
+      totalProducts,
+      pendingProducts,
+      approvedProducts,
+      rejectedProducts,
+      totalReviews,
+      pendingReviews,
+      productStats
+    ] = statsData;
 
     const [
       currentMonthUsers,
@@ -132,33 +190,11 @@ export async function GET() {
       currentMonthProducts,
       previousMonthProducts,
       currentMonthRevenue
-    ] = await Promise.all([
-      prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: sixtyDaysAgo,
-            lt: thirtyDaysAgo
-          }
-        }
-      }),
-      prisma.product.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      prisma.product.count({
-        where: {
-          createdAt: {
-            gte: sixtyDaysAgo,
-            lt: thirtyDaysAgo
-          }
-        }
-      }),
-      prisma.product.aggregate({
-        where: {
-          createdAt: { gte: thirtyDaysAgo },
-          status: "APPROVED"
-        },
-        _sum: { price: true }
-      })
-    ]);
+    ] = monthlyData;
+
+    // Calculate values from aggregated data
+    const totalRevenue = productStats._sum.price || 0;
+    const soldProducts = productStats._count.isSold;
 
     // Calculate growth percentages
     const userGrowth = previousMonthUsers > 0
@@ -191,6 +227,9 @@ export async function GET() {
       stats,
       recentActivity,
     });
+
+    // Cache the response
+    setCachedData(cacheKey, { stats, recentActivity });
 
     // Add caching headers for better performance
     response.headers.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');

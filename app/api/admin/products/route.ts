@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   // Skip authentication during build/static generation but still fetch real data
   const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
