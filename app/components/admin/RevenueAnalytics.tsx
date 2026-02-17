@@ -173,14 +173,19 @@ export function RevenueAnalytics() {
                 {(!revenueData.topSellingProducts || revenueData.topSellingProducts.length === 0) ? (
                   <div className="text-center py-8">
                     <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-2 text-sm font-semibold">No sales data</h3>
+                    <h3 className="mt-2 text-sm font-semibold">No sales data yet</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Start selling products to see analytics here.
+                      Products will appear here once they start selling
                     </p>
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs text-blue-800">
+                        <strong>Tip:</strong> Focus on approving products to start generating sales data
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   revenueData.topSellingProducts.map((product, index) => (
-                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-sm">
                           {index + 1}
@@ -188,12 +193,12 @@ export function RevenueAnalytics() {
                         <div>
                           <h4 className="font-semibold">{product.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {product.soldCount} sold × ₦{product.price}
+                            {product.soldCount} sold × ₦{product.price.toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₦{(product.revenue || 0).toLocaleString()}</p>
+                        <p className="font-semibold text-green-600">₦{(product.revenue || 0).toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground">
                           {revenueData.totalRevenue > 0 ? Math.round((product.revenue / revenueData.totalRevenue) * 100) : 0}% of total
                         </p>
@@ -222,14 +227,19 @@ export function RevenueAnalytics() {
                 {(!revenueData.categoryRevenue || revenueData.categoryRevenue.length === 0) ? (
                   <div className="text-center py-8">
                     <PieChart className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-2 text-sm font-semibold">No category data</h3>
+                    <h3 className="mt-2 text-sm font-semibold">No category revenue data</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      No revenue data available for categories.
+                      Revenue will appear here once products start selling
                     </p>
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-xs text-green-800">
+                        <strong>Insight:</strong> Categories with approved products will generate revenue data
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   revenueData.categoryRevenue.map((category) => (
-                    <div key={category.category} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={category.category} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm">
                           {category.category.charAt(0).toUpperCase()}
@@ -237,12 +247,12 @@ export function RevenueAnalytics() {
                         <div>
                           <h4 className="font-semibold capitalize">{category.category}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {category.count} products
+                            {category.count} sold product{category.count !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₦{(category.revenue || 0).toLocaleString()}</p>
+                        <p className="font-semibold text-green-600">₦{(category.revenue || 0).toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground">
                           {revenueData.totalRevenue > 0 ? Math.round((category.revenue / revenueData.totalRevenue) * 100) : 0}% of total
                         </p>

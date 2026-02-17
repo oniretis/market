@@ -272,22 +272,40 @@ export function AdminDashboard() {
                     ₦{stats.totalProducts > 0 ? Math.round(stats.totalRevenue / stats.totalProducts) : 0}
                   </span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Platform Health</span>
+                  <span className={`text-sm font-semibold ${stats.pendingProducts === 0 ? 'text-green-600' : 'text-yellow-600'
+                    }`}>
+                    {stats.pendingProducts === 0 ? 'Excellent' : 'Needs Attention'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common admin tasks</CardDescription>
+                <CardTitle>Revenue Analytics</CardTitle>
+                <CardDescription>Financial performance overview</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <span>{stats.pendingProducts} products pending approval</span>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Revenue</span>
+                  <span className="text-sm text-muted-foreground">₦{stats.totalRevenue.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <AlertTriangle className="h-4 w-4 text-blue-600" />
-                  <span>{stats.pendingReviews} reviews pending moderation</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Monthly Growth</span>
+                  <span className={`text-sm font-semibold ${stats.monthlyGrowth.revenue > 0 ? 'text-green-600' : 'text-gray-600'
+                    }`}>
+                    {stats.monthlyGrowth.revenue > 0 ? '+' : ''}₦{stats.monthlyGrowth.revenue.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Conversion Rate</span>
+                  <span className="text-sm text-muted-foreground">
+                    {stats.totalProducts > 0
+                      ? Math.round((stats.soldProducts / stats.totalProducts) * 100)
+                      : 0}%
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -335,7 +353,48 @@ export function AdminDashboard() {
               <CardDescription>Manage product listings and approvals</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Product management interface will be implemented here.</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{stats.pendingProducts}</div>
+                    <div className="text-sm text-muted-foreground">Pending Approval</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{stats.approvedProducts}</div>
+                    <div className="text-sm text-muted-foreground">Approved</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{stats.rejectedProducts}</div>
+                    <div className="text-sm text-muted-foreground">Rejected</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{stats.soldProducts}</div>
+                    <div className="text-sm text-muted-foreground">Sold</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Total Products: <span className="font-semibold">{stats.totalProducts}</span>
+                  </div>
+                  <Button
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="flex items-center space-x-2"
+                  >
+                    <Package className="h-4 w-4" />
+                    <span>Manage Products</span>
+                  </Button>
+                </div>
+
+                {stats.pendingProducts > 0 && (
+                  <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-800">
+                      {stats.pendingProducts} products awaiting approval
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -347,7 +406,50 @@ export function AdminDashboard() {
               <CardDescription>Manage users and permissions</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">User management interface will be implemented here.</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
+                    <div className="text-sm text-muted-foreground">Total Users</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {stats.monthlyGrowth.users > 0 ? `+${stats.monthlyGrowth.users}%` : `${stats.monthlyGrowth.users}%`}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Monthly Growth</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {stats.totalProducts > 0 ? Math.round((stats.totalProducts / stats.totalUsers) * 10) / 10 : 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Avg. Products/User</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Active users registered this month: <span className="font-semibold text-green-600">
+                      {stats.monthlyGrowth.users > 0 ? stats.monthlyGrowth.users : 0}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => window.location.href = '/admin/users'}
+                    className="flex items-center space-x-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Manage Users</span>
+                  </Button>
+                </div>
+
+                {stats.monthlyGrowth.users > 50 && (
+                  <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-800">
+                      Strong user growth this month (+{stats.monthlyGrowth.users}%)
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
