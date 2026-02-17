@@ -24,12 +24,7 @@ export default function Hero() {
   const [imageError, setImageError] = useState(false);
   const router = useRouter();
 
-  const counters = [
-    { value: "1,500 +", label: "Properties" },
-    { value: "50 +", label: "Cars" },
-    { value: "30%", label: "Mobiles" },
-    { value: "95%", label: "Customer Satisfaction Rate" },
-  ];
+
 
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>

@@ -192,6 +192,11 @@ export async function getCategories() {
   const categories = await prisma.category.findMany({
     where: {
       isActive: true,
+      Product: {
+        some: {
+          status: "APPROVED"
+        }
+      }
     },
     select: {
       name: true,

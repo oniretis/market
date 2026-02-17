@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface iAppProps {
-  category: "newest" | "properties" | "gadgets" | "cars" | "others";
+  category: "newest" | string;
 }
 
 async function getData({ category }: iAppProps) {

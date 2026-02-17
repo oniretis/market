@@ -3,37 +3,65 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export const navbarLinks = [
-  {
-    id: 0,
-    name: "Home",
-    href: "/",
-  },
-  {
-    id: 1,
-    name: "Properties",
-    href: "/products/properties",
-  },
-  {
-    id: 2,
-    name: "Gadgets",
-    href: "/products/gadgets",
-  },
-  {
-    id: 3,
-    name: "Cars",
-    href: "/products/cars",
-  },
-  {
-    id: 4,
-    name: "Others",
-    href: "/products/others",
-  },
-];
+interface NavbarLink {
+  id: number;
+  name: string;
+  href: string;
+}
 
 export function NavbarLinks() {
+  const [navbarLinks, setNavbarLinks] = useState<NavbarLink[]>([
+    {
+      id: 0,
+      name: "Home",
+      href: "/",
+    },
+  ]);
+  const [loading, setLoading] = useState(true);
   const location = usePathname();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          const data = await response.json();
+          const categories = data.categories || [];
+
+          // Only show categories that have approved products
+          const categoriesWithProducts = categories
+            .filter((cat: any) => cat.count > 0)
+            .map((cat: any, index: number) => ({
+              id: index + 1,
+              name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1),
+              href: `/products/${cat.name}`,
+            }));
+
+          setNavbarLinks(prev => [...prev, ...categoriesWithProducts]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="hidden md:flex justify-center items-center col-span-6 gap-x-1">
+        <div className="animate-pulse flex gap-x-1">
+          <div className="h-10 w-20 bg-muted rounded"></div>
+          <div className="h-10 w-24 bg-muted rounded"></div>
+          <div className="h-10 w-20 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="hidden md:flex justify-center items-center col-span-6 gap-x-1">

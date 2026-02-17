@@ -10,6 +10,19 @@ export async function GET() {
   try {
     if (!isBuildTime) {
       await requireAdmin();
+    } else {
+      // Return mock data during build time
+      return NextResponse.json({
+        totalRevenue: 0,
+        monthlyRevenue: Array(12).fill(0),
+        topSellingProducts: [],
+        categoryRevenue: [],
+        monthlyStats: {
+          currentMonth: 0,
+          lastMonth: 0,
+          growth: 0,
+        },
+      });
     }
 
     console.log('Revenue analytics API: Fetching data from database...');

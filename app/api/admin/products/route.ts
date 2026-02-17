@@ -13,7 +13,8 @@ export async function GET() {
       await requireAdmin();
       console.log("Admin authentication successful");
     } else {
-      console.log("Build time detected, skipping auth but fetching data");
+      console.log("Build time detected, returning empty products");
+      return NextResponse.json({ products: [] });
     }
 
     const products = await prisma.product.findMany({
