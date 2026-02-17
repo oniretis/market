@@ -4,11 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Star, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
+import {
+  Star,
+  CheckCircle,
+  XCircle,
+  Eye,
   MessageSquare,
   User,
   Package,
@@ -43,6 +43,74 @@ export function ReviewModeration() {
 
   useEffect(() => {
     fetchReviews();
+
+    // Set up Server-Sent Events for real-time updates with fallback polling
+    const connectSSE = () => {
+      const eventSource = new EventSource("/api/admin/reviews/stream");
+
+      eventSource.onopen = () => {
+        console.log('Reviews SSE connection established');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error('Reviews SSE Error:', data.error);
+            return;
+          }
+          if (data.build) {
+            // Ignore build-time messages
+            return;
+          }
+          if (data.reviews && Array.isArray(data.reviews)) {
+            setReviews(data.reviews);
+            console.log(`Reviews updated via SSE: ${data.reviews.length} reviews`);
+          }
+        } catch (error) {
+          console.error('Error parsing reviews SSE data:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('Reviews SSE connection error, falling back to polling', error);
+        eventSource.close();
+
+        // Fallback to polling if SSE fails
+        const pollingInterval = setInterval(() => {
+          if (document.visibilityState === 'visible') {
+            fetchReviews();
+          }
+        }, 60000);
+
+        // Cleanup polling on reconnection
+        return () => {
+          clearInterval(pollingInterval);
+        };
+      };
+
+      return eventSource;
+    };
+
+    const eventSource = connectSSE();
+
+    // Handle visibility changes to pause/resume SSE
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, reconnecting reviews SSE...');
+        connectSSE();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchReviews = async () => {
@@ -62,7 +130,7 @@ export function ReviewModeration() {
       const response = await fetch(`/api/admin/reviews/${reviewId}/approve`, {
         method: "POST",
       });
-      
+
       if (response.ok) {
         fetchReviews(); // Refresh the list
       }
@@ -76,7 +144,7 @@ export function ReviewModeration() {
       const response = await fetch(`/api/admin/reviews/${reviewId}/reject`, {
         method: "POST",
       });
-      
+
       if (response.ok) {
         fetchReviews(); // Refresh the list
       }
@@ -100,9 +168,8 @@ export function ReviewModeration() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${
-          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-        }`}
+        className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+          }`}
       />
     ));
   };
@@ -205,7 +272,7 @@ export function ReviewModeration() {
                           <Eye className="h-4 w-4 mr-1" />
                           View Product
                         </Button>
-                        
+
                         {!review.isApproved && (
                           <>
                             <Button

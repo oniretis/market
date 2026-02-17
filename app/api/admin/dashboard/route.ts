@@ -47,56 +47,97 @@ export async function GET() {
       );
     }
 
-    // Get basic stats sequentially to avoid connection pool exhaustion
-    const totalUsers = await prisma.user.count();
-    const totalProducts = await prisma.product.count();
-    const allProducts = await prisma.product.findMany();
-    const pendingProducts = await prisma.product.count({ where: { status: "PENDING" } });
-    const approvedProducts = await prisma.product.count({ where: { status: "APPROVED" } });
-    const rejectedProducts = await prisma.product.count({ where: { status: "REJECTED" } });
-    const totalReviews = await prisma.review.count();
-    const pendingReviews = await prisma.review.count({ where: { isApproved: false } });
+    // Use Prisma's transaction for better performance and consistency
+    const [
+      totalUsers,
+      totalProducts,
+      pendingProducts,
+      approvedProducts,
+      rejectedProducts,
+      totalReviews,
+      pendingReviews,
+      productStats,
+      recentActivity
+    ] = await Promise.all([
+      // Basic counts
+      prisma.user.count(),
+      prisma.product.count(),
+      prisma.product.count({ where: { status: "PENDING" } }),
+      prisma.product.count({ where: { status: "APPROVED" } }),
+      prisma.product.count({ where: { status: "REJECTED" } }),
+      prisma.review.count(),
+      prisma.review.count({ where: { isApproved: false } }),
 
-    // Calculate total revenue from all products (using price as placeholder)
-    const totalRevenue = allProducts.reduce((sum, product) => sum + product.price, 0);
-    const soldProducts = allProducts.filter(product => product.isSold).length;
+      // Aggregate queries for performance
+      prisma.product.aggregate({
+        _sum: { price: true },
+        _count: { isSold: true },
+        where: { isSold: true }
+      }),
 
-    // Get monthly growth data sequentially to avoid connection pool exhaustion
+      // Recent activity with limited fields
+      prisma.activity.findMany({
+        select: {
+          id: true,
+          action: true,
+          description: true,
+          createdAt: true,
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      })
+    ]);
+
+    // Calculate values from aggregated data
+    const totalRevenue = productStats._sum.price || 0;
+    const soldProducts = productStats._count.isSold;
+
+    // Get monthly growth data in parallel
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    const currentMonthUsers = await prisma.user.count({
-      where: { createdAt: { gte: thirtyDaysAgo } }
-    });
-    const previousMonthUsers = await prisma.user.count({
-      where: {
-        createdAt: {
-          gte: sixtyDaysAgo,
-          lt: thirtyDaysAgo
+    const [
+      currentMonthUsers,
+      previousMonthUsers,
+      currentMonthProducts,
+      previousMonthProducts,
+      currentMonthRevenue
+    ] = await Promise.all([
+      prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      prisma.user.count({
+        where: {
+          createdAt: {
+            gte: sixtyDaysAgo,
+            lt: thirtyDaysAgo
+          }
         }
-      }
-    });
-    const currentMonthProducts = await prisma.product.count({
-      where: { createdAt: { gte: thirtyDaysAgo } }
-    });
-    const previousMonthProducts = await prisma.product.count({
-      where: {
-        createdAt: {
-          gte: sixtyDaysAgo,
-          lt: thirtyDaysAgo
+      }),
+      prisma.product.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      prisma.product.count({
+        where: {
+          createdAt: {
+            gte: sixtyDaysAgo,
+            lt: thirtyDaysAgo
+          }
         }
-      }
-    });
-    const currentMonthRevenue = await prisma.product.aggregate({
-      where: {
-        createdAt: { gte: thirtyDaysAgo },
-        status: "APPROVED"
-      },
-      _sum: { price: true }
-    });
+      }),
+      prisma.product.aggregate({
+        where: {
+          createdAt: { gte: thirtyDaysAgo },
+          status: "APPROVED"
+        },
+        _sum: { price: true }
+      })
+    ]);
 
     // Calculate growth percentages
     const userGrowth = previousMonthUsers > 0
@@ -107,19 +148,6 @@ export async function GET() {
       ? Math.round(((currentMonthProducts - previousMonthProducts) / previousMonthProducts) * 100)
       : currentMonthProducts > 0 ? 100 : 0;
 
-    // Get recent activity
-    const recentActivity = await prisma.activity.findMany({
-      include: {
-        User: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
 
     const stats = {
       totalUsers,
@@ -143,8 +171,8 @@ export async function GET() {
       recentActivity,
     });
 
-    // Prevent caching to ensure real-time data
-    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
 

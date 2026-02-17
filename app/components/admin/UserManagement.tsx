@@ -42,6 +42,74 @@ export function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+
+    // Set up Server-Sent Events for real-time updates with fallback polling
+    const connectSSE = () => {
+      const eventSource = new EventSource("/api/admin/users/stream");
+
+      eventSource.onopen = () => {
+        console.log('Users SSE connection established');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error('Users SSE Error:', data.error);
+            return;
+          }
+          if (data.build) {
+            // Ignore build-time messages
+            return;
+          }
+          if (data.users && Array.isArray(data.users)) {
+            setUsers(data.users);
+            console.log(`Users updated via SSE: ${data.users.length} users`);
+          }
+        } catch (error) {
+          console.error('Error parsing users SSE data:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('Users SSE connection error, falling back to polling', error);
+        eventSource.close();
+
+        // Fallback to polling if SSE fails
+        const pollingInterval = setInterval(() => {
+          if (document.visibilityState === 'visible') {
+            fetchUsers();
+          }
+        }, 60000);
+
+        // Cleanup polling on reconnection
+        return () => {
+          clearInterval(pollingInterval);
+        };
+      };
+
+      return eventSource;
+    };
+
+    const eventSource = connectSSE();
+
+    // Handle visibility changes to pause/resume SSE
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, reconnecting users SSE...');
+        connectSSE();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchUsers = async () => {

@@ -82,6 +82,74 @@ export function ProductApprovalList() {
 
   useEffect(() => {
     fetchProducts();
+
+    // Set up Server-Sent Events for real-time updates with fallback polling
+    const connectSSE = () => {
+      const eventSource = new EventSource("/api/admin/products/stream");
+
+      eventSource.onopen = () => {
+        console.log('Products SSE connection established');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error('Products SSE Error:', data.error);
+            return;
+          }
+          if (data.build) {
+            // Ignore build-time messages
+            return;
+          }
+          if (data.products && Array.isArray(data.products)) {
+            setProducts(data.products);
+            console.log(`Products updated via SSE: ${data.products.length} products`);
+          }
+        } catch (error) {
+          console.error('Error parsing products SSE data:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('Products SSE connection error, falling back to polling', error);
+        eventSource.close();
+
+        // Fallback to polling if SSE fails
+        const pollingInterval = setInterval(() => {
+          if (document.visibilityState === 'visible') {
+            fetchProducts();
+          }
+        }, 60000);
+
+        // Cleanup polling on reconnection
+        return () => {
+          clearInterval(pollingInterval);
+        };
+      };
+
+      return eventSource;
+    };
+
+    const eventSource = connectSSE();
+
+    // Handle visibility changes to pause/resume SSE
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, reconnecting products SSE...');
+        connectSSE();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchProducts = async () => {

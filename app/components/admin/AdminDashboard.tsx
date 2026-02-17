@@ -39,7 +39,7 @@ interface DashboardStats {
 interface RecentActivity {
   id: string;
   action: string;
-  details: string;
+  description: string;
   createdAt: string;
   User?: {
     firstName: string;
@@ -153,7 +153,7 @@ export function AdminDashboard() {
           if (document.visibilityState === 'visible') {
             fetchDashboardData();
           }
-        }, 30000);
+        }, 60000);
 
         // Cleanup polling on reconnection
         return () => {
@@ -355,7 +355,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground truncate">{activity.details}</p>
+                    <p className="text-xs text-muted-foreground truncate">{activity.description}</p>
                   </div>
                   <div className="flex-shrink-0 text-xs text-muted-foreground">
                     {activity.User && (

@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Activity, 
-  Search, 
-  Filter, 
-  User, 
+import {
+  Activity,
+  Search,
+  Filter,
+  User,
   Package,
   Calendar,
   Clock,
@@ -96,6 +96,74 @@ export function ActivityMonitoring() {
 
   useEffect(() => {
     fetchActivities();
+
+    // Set up Server-Sent Events for real-time updates with fallback polling
+    const connectSSE = () => {
+      const eventSource = new EventSource("/api/admin/activity/stream");
+
+      eventSource.onopen = () => {
+        console.log('Activity SSE connection established');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error('Activity SSE Error:', data.error);
+            return;
+          }
+          if (data.build) {
+            // Ignore build-time messages
+            return;
+          }
+          if (data.activities && Array.isArray(data.activities)) {
+            setActivities(data.activities);
+            console.log(`Activities updated via SSE: ${data.activities.length} activities`);
+          }
+        } catch (error) {
+          console.error('Error parsing activity SSE data:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('Activity SSE connection error, falling back to polling', error);
+        eventSource.close();
+
+        // Fallback to polling if SSE fails (more frequent for activity)
+        const pollingInterval = setInterval(() => {
+          if (document.visibilityState === 'visible') {
+            fetchActivities();
+          }
+        }, 30000);
+
+        // Cleanup polling on reconnection
+        return () => {
+          clearInterval(pollingInterval);
+        };
+      };
+
+      return eventSource;
+    };
+
+    const eventSource = connectSSE();
+
+    // Handle visibility changes to pause/resume SSE
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, reconnecting activity SSE...');
+        connectSSE();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchActivities = async () => {
@@ -111,13 +179,13 @@ export function ActivityMonitoring() {
   };
 
   const filteredActivities = activities.filter(activity => {
-    const matchesSearch = 
+    const matchesSearch =
       activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activity.user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activity.user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activity.user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
     switch (activeTab) {
@@ -221,11 +289,11 @@ export function ActivityMonitoring() {
                             {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
                           </span>
                         </div>
-                        
+
                         <p className="font-medium text-gray-900 mb-1">
                           {activity.description}
                         </p>
-                        
+
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
