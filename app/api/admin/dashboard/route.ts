@@ -7,8 +7,18 @@ export async function GET() {
   const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
     (process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build");
 
+  // Enhanced debugging for production
+  console.log('Dashboard API called:', {
+    isBuildTime,
+    nodeEnv: process.env.NODE_ENV,
+    hasDbUrl: !!process.env.DATABASE_URL,
+    hasDirectUrl: !!process.env.DIRECT_URL,
+    phase: process.env.NEXT_PHASE
+  });
+
   // During build time, return mock data to avoid database connection issues
   if (isBuildTime) {
+    console.log('Returning mock data for build time');
     return NextResponse.json({
       stats: {
         totalUsers: 0,
@@ -179,6 +189,11 @@ export async function GET() {
     return response;
   } catch (error) {
     console.error("Dashboard API error:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
 
     // Handle specific authentication errors (only for runtime, not build time)
     if (!isBuildTime && error instanceof Error) {
@@ -191,9 +206,17 @@ export async function GET() {
       }
     }
 
-    console.error("Dashboard API error:", error);
+    // Return more detailed error info for debugging
     return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+      {
+        error: "Failed to fetch dashboard data",
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: {
+          isBuildTime,
+          nodeEnv: process.env.NODE_ENV,
+          hasDbUrl: !!process.env.DATABASE_URL
+        }
+      },
       { status: 500 }
     );
   }

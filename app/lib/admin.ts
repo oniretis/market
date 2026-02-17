@@ -3,17 +3,36 @@ import prisma from "./db";
 import { redirect } from "next/navigation";
 
 export async function getCurrentUser() {
+  console.log('getCurrentUser: Starting user lookup');
   const { getUser } = getKindeServerSession();
   const user = await getUser();
 
+  console.log('getCurrentUser: Kinde user result:', {
+    hasUser: !!user,
+    userId: user?.id,
+    email: user?.email,
+    firstName: user?.given_name,
+    lastName: user?.family_name
+  });
+
   if (!user) {
+    console.log('getCurrentUser: No user from Kinde session');
     return null;
   }
 
+  console.log('getCurrentUser: Looking up user in database with ID:', user.id);
   const dbUser = await prisma.user.findUnique({
     where: {
       id: user.id,
     },
+  });
+
+  console.log('getCurrentUser: Database user result:', {
+    found: !!dbUser,
+    dbUserId: dbUser?.id,
+    dbEmail: dbUser?.email,
+    role: dbUser?.role,
+    isActive: dbUser?.isActive
   });
 
   return dbUser;
@@ -41,20 +60,36 @@ export async function requireAuth() {
 
 export async function requireAdmin() {
   try {
+    console.log('requireAdmin: Starting authentication check');
     const user = await requireAuth();
 
+    console.log('requireAdmin: User authenticated:', {
+      userId: user?.id,
+      email: user?.email,
+      role: user?.role,
+      isActive: user?.isActive
+    });
+
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
-      console.log('Admin access denied. User role:', user?.role);
+      console.log('Admin access denied. User role:', user?.role, 'User exists:', !!user);
+
+      // Enhanced debugging
+      if (!user) {
+        console.log('requireAdmin: No user found in database');
+      } else {
+        console.log('requireAdmin: User found but role is:', user.role);
+      }
 
       // Check if we're in an API route
       const stack = new Error().stack || '';
       if (stack.includes('/api/') || stack.includes('route.ts')) {
-        throw new Error("Admin access required");
+        throw new Error(`Admin access required. Current role: ${user?.role || 'NONE'}`);
       }
 
       redirect("/unauthorized");
     }
 
+    console.log('requireAdmin: Access granted for user:', user.email);
     return user;
   } catch (error) {
     console.error('Admin authentication error:', error);

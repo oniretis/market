@@ -75,6 +75,19 @@ export function AdminDashboard() {
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+
+      // Show specific error message if available
+      let errorMessage = "Failed to load dashboard data";
+      if (error instanceof Error && error.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          errorMessage = errorData.error || errorData.details || errorMessage;
+          console.log('Parsed error:', errorData);
+        } catch {
+          errorMessage = error.message;
+        }
+      }
+
       // Set default values to prevent UI crashes
       setStats({
         totalUsers: 0,
@@ -93,6 +106,9 @@ export function AdminDashboard() {
         },
       });
       setRecentActivity([]);
+
+      // Show error in UI for debugging
+      alert(`Dashboard Error: ${errorMessage}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
