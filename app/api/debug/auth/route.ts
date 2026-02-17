@@ -4,9 +4,9 @@ import { getCurrentUser } from "@/app/lib/admin";
 export async function GET() {
   try {
     console.log('Checking current authentication status...');
-    
+
     const user = await getCurrentUser();
-    
+
     if (!user) {
       console.log('No user authenticated');
       return NextResponse.json({
@@ -15,9 +15,9 @@ export async function GET() {
         message: "No user is currently logged in"
       });
     }
-    
+
     console.log('User authenticated:', user.email, 'Role:', user.role);
-    
+
     return NextResponse.json({
       authenticated: true,
       user: {
@@ -29,12 +29,13 @@ export async function GET() {
       },
       message: `User ${user.email} is logged in with role: ${user.role}`
     });
-    
+
   } catch (error) {
     console.error('Auth check error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json({
       authenticated: false,
-      error: error.message,
+      error: errorMessage,
       message: "Error checking authentication status"
     }, { status: 500 });
   }
