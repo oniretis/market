@@ -28,6 +28,11 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
+    // Check if we're in an API route by checking the call stack
+    const stack = new Error().stack || '';
+    if (stack.includes('/api/') || stack.includes('route.ts')) {
+      throw new Error("Authentication required");
+    }
     redirect("/api/auth/login");
   }
 
@@ -35,13 +40,26 @@ export async function requireAuth() {
 }
 
 export async function requireAdmin() {
-  const user = await requireAuth();
+  try {
+    const user = await requireAuth();
 
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
-    redirect("/unauthorized");
+    if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+      console.log('Admin access denied. User role:', user?.role);
+
+      // Check if we're in an API route
+      const stack = new Error().stack || '';
+      if (stack.includes('/api/') || stack.includes('route.ts')) {
+        throw new Error("Admin access required");
+      }
+
+      redirect("/unauthorized");
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Admin authentication error:', error);
+    throw error;
   }
-
-  return user;
 }
 
 export async function requireSuperAdmin() {

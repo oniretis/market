@@ -29,9 +29,22 @@ export async function GET() {
 
     return NextResponse.json({ reviews });
   } catch (error) {
-    // Handle build environment gracefully
-    if (error instanceof Error && error.message.includes("Build environment")) {
-      return NextResponse.json({ reviews: [] });
+    console.error("Reviews API error:", error);
+
+    // Handle specific authentication errors
+    if (error instanceof Error) {
+      if (error.message.includes("Build environment")) {
+        console.log("Build environment detected, returning empty reviews");
+        return NextResponse.json({ reviews: [] });
+      }
+
+      if (error.message.includes("Authentication required") || error.message.includes("Admin access required")) {
+        console.log("Reviews authentication failed:", error.message);
+        return NextResponse.json(
+          { error: "Authentication required. Please log in as an admin." },
+          { status: 401 }
+        );
+      }
     }
 
     console.error("Reviews API error:", error);

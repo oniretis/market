@@ -85,19 +85,32 @@ export async function GET() {
 
     return NextResponse.json(revenueData);
   } catch (error) {
-    // Handle build environment gracefully
-    if (error instanceof Error && error.message.includes("Build environment")) {
-      return NextResponse.json({
-        totalRevenue: 0,
-        monthlyRevenue: Array.from({ length: 12 }, () => 0),
-        topSellingProducts: [],
-        categoryRevenue: [],
-        monthlyStats: {
-          currentMonth: 0,
-          lastMonth: 0,
-          growth: 0,
-        },
-      });
+    console.error("Revenue analytics API error:", error);
+
+    // Handle specific authentication errors
+    if (error instanceof Error) {
+      if (error.message.includes("Build environment")) {
+        console.log("Build environment detected, returning empty revenue data");
+        return NextResponse.json({
+          totalRevenue: 0,
+          monthlyRevenue: Array.from({ length: 12 }, () => 0),
+          topSellingProducts: [],
+          categoryRevenue: [],
+          monthlyStats: {
+            currentMonth: 0,
+            lastMonth: 0,
+            growth: 0,
+          },
+        });
+      }
+
+      if (error.message.includes("Authentication required") || error.message.includes("Admin access required")) {
+        console.log("Revenue analytics authentication failed:", error.message);
+        return NextResponse.json(
+          { error: "Authentication required. Please log in as an admin." },
+          { status: 401 }
+        );
+      }
     }
 
     console.error("Revenue analytics API error:", error);
