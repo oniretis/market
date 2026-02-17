@@ -24,14 +24,21 @@ export async function GET() {
     // Create a readable stream for Server-Sent Events
     const stream = new ReadableStream({
       start(controller) {
+        let isActive = true;
+
         // Send initial data
         const sendInitialData = async () => {
+          if (!isActive) return;
           try {
             const data = await getDashboardData();
-            controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+            if (isActive) {
+              controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+            }
           } catch (error) {
             console.error('Error sending initial dashboard data:', error);
-            controller.enqueue(`data: ${JSON.stringify({ error: 'Failed to fetch data' })}\n\n`);
+            if (isActive) {
+              controller.enqueue(`data: ${JSON.stringify({ error: 'Failed to fetch data' })}\n\n`);
+            }
           }
         };
 
@@ -39,17 +46,27 @@ export async function GET() {
 
         // Set up periodic updates every 30 seconds
         const interval = setInterval(async () => {
+          if (!isActive) {
+            clearInterval(interval);
+            return;
+          }
+
           try {
             const data = await getDashboardData();
-            controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+            if (isActive) {
+              controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+            }
           } catch (error) {
             console.error('Error sending dashboard update:', error);
-            controller.enqueue(`data: ${JSON.stringify({ error: 'Failed to fetch data' })}\n\n`);
+            if (isActive) {
+              controller.enqueue(`data: ${JSON.stringify({ error: 'Failed to fetch data' })}\n\n`);
+            }
           }
         }, 30000);
 
         // Clean up on client disconnect
         controller.close = () => {
+          isActive = false;
           clearInterval(interval);
         };
       },
@@ -111,75 +128,56 @@ async function getDashboardData() {
     };
   }
 
-  // Get basic stats
-  const [
-    totalUsers,
-    totalProducts,
-    allProducts,
-    pendingProducts,
-    approvedProducts,
-    rejectedProducts,
-    totalReviews,
-    pendingReviews
-  ] = await Promise.all([
-    prisma.user.count(),
-    prisma.product.count(),
-    prisma.product.findMany(),
-    prisma.product.count({ where: { status: "PENDING" } }),
-    prisma.product.count({ where: { status: "APPROVED" } }),
-    prisma.product.count({ where: { status: "REJECTED" } }),
-    prisma.review.count(),
-    prisma.review.count({ where: { isApproved: false } }),
-  ]);
+  // Get basic stats sequentially to avoid connection pool exhaustion
+  const totalUsers = await prisma.user.count();
+  const totalProducts = await prisma.product.count();
+  const allProducts = await prisma.product.findMany();
+  const pendingProducts = await prisma.product.count({ where: { status: "PENDING" } });
+  const approvedProducts = await prisma.product.count({ where: { status: "APPROVED" } });
+  const rejectedProducts = await prisma.product.count({ where: { status: "REJECTED" } });
+  const totalReviews = await prisma.review.count();
+  const pendingReviews = await prisma.review.count({ where: { isApproved: false } });
 
   // Calculate total revenue from all products (using price as placeholder)
   const totalRevenue = allProducts.reduce((sum, product) => sum + product.price, 0);
   const soldProducts = allProducts.filter(product => product.isSold).length;
 
-  // Get monthly growth data
+  // Get monthly growth data sequentially to avoid connection pool exhaustion
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const sixtyDaysAgo = new Date();
   sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-  const [
-    currentMonthUsers,
-    previousMonthUsers,
-    currentMonthProducts,
-    previousMonthProducts,
-    currentMonthRevenue
-  ] = await Promise.all([
-    prisma.user.count({
-      where: { createdAt: { gte: thirtyDaysAgo } }
-    }),
-    prisma.user.count({
-      where: {
-        createdAt: {
-          gte: sixtyDaysAgo,
-          lt: thirtyDaysAgo
-        }
+  const currentMonthUsers = await prisma.user.count({
+    where: { createdAt: { gte: thirtyDaysAgo } }
+  });
+  const previousMonthUsers = await prisma.user.count({
+    where: {
+      createdAt: {
+        gte: sixtyDaysAgo,
+        lt: thirtyDaysAgo
       }
-    }),
-    prisma.product.count({
-      where: { createdAt: { gte: thirtyDaysAgo } }
-    }),
-    prisma.product.count({
-      where: {
-        createdAt: {
-          gte: sixtyDaysAgo,
-          lt: thirtyDaysAgo
-        }
+    }
+  });
+  const currentMonthProducts = await prisma.product.count({
+    where: { createdAt: { gte: thirtyDaysAgo } }
+  });
+  const previousMonthProducts = await prisma.product.count({
+    where: {
+      createdAt: {
+        gte: sixtyDaysAgo,
+        lt: thirtyDaysAgo
       }
-    }),
-    prisma.product.aggregate({
-      where: {
-        createdAt: { gte: thirtyDaysAgo },
-        status: "APPROVED"
-      },
-      _sum: { price: true }
-    })
-  ]);
+    }
+  });
+  const currentMonthRevenue = await prisma.product.aggregate({
+    where: {
+      createdAt: { gte: thirtyDaysAgo },
+      status: "APPROVED"
+    },
+    _sum: { price: true }
+  });
 
   // Calculate growth percentages
   const userGrowth = previousMonthUsers > 0

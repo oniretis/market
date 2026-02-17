@@ -3,6 +3,16 @@ import { requireAdmin } from "@/app/lib/admin";
 import { logActivity } from "@/app/lib/admin";
 
 export async function POST(request: Request) {
+  // Skip authentication during build/static generation
+  const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
+    (process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build");
+
+  // During build time, return empty response to avoid database connection issues
+  if (isBuildTime) {
+    console.log("Build environment detected, skipping bulk approve");
+    return NextResponse.json({ message: "Build time - operation skipped" });
+  }
+
   try {
     const admin = await requireAdmin();
     const { productIds } = await request.json();
@@ -33,9 +43,9 @@ export async function POST(request: Request) {
       { productIds, count: productIds.length }
     );
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: `${productIds.length} products approved successfully`,
-      count: productIds.length 
+      count: productIds.length
     });
   } catch (error) {
     console.error("Bulk approve error:", error);

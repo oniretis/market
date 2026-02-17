@@ -3,6 +3,16 @@ import { requireAdmin } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 
 export async function GET() {
+  // Skip authentication during build/static generation
+  const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
+    (process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build");
+
+  // During build time, return empty data to avoid database connection issues
+  if (isBuildTime) {
+    console.log("Build environment detected, returning empty activities");
+    return NextResponse.json({ activities: [] });
+  }
+
   try {
     await requireAdmin();
 
