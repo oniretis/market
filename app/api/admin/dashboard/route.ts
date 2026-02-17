@@ -3,8 +3,28 @@ import { requireAdmin } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 
 export async function GET() {
+  // Skip authentication during build/static generation but still fetch real data
+  const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
+    (process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build");
+
   try {
-    await requireAdmin();
+    if (!isBuildTime) {
+      await requireAdmin();
+    }
+
+    console.log('Dashboard API: Fetching data from database...');
+
+    // Test database connection first
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('Dashboard API: Database connection verified');
+    } catch (dbError) {
+      console.error('Dashboard API: Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: "Database connection failed. Please check your database configuration." },
+        { status: 503 }
+      );
+    }
 
     // Get basic stats
     const [
@@ -35,16 +55,37 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
     const [
-      monthlyUsers,
-      monthlyProducts,
-      monthlyRevenue
+      currentMonthUsers,
+      previousMonthUsers,
+      currentMonthProducts,
+      previousMonthProducts,
+      currentMonthRevenue
     ] = await Promise.all([
       prisma.user.count({
         where: { createdAt: { gte: thirtyDaysAgo } }
       }),
+      prisma.user.count({
+        where: {
+          createdAt: {
+            gte: sixtyDaysAgo,
+            lt: thirtyDaysAgo
+          }
+        }
+      }),
       prisma.product.count({
         where: { createdAt: { gte: thirtyDaysAgo } }
+      }),
+      prisma.product.count({
+        where: {
+          createdAt: {
+            gte: sixtyDaysAgo,
+            lt: thirtyDaysAgo
+          }
+        }
       }),
       prisma.product.aggregate({
         where: {
@@ -54,6 +95,15 @@ export async function GET() {
         _sum: { price: true }
       })
     ]);
+
+    // Calculate growth percentages
+    const userGrowth = previousMonthUsers > 0
+      ? Math.round(((currentMonthUsers - previousMonthUsers) / previousMonthUsers) * 100)
+      : currentMonthUsers > 0 ? 100 : 0;
+
+    const productGrowth = previousMonthProducts > 0
+      ? Math.round(((currentMonthProducts - previousMonthProducts) / previousMonthProducts) * 100)
+      : currentMonthProducts > 0 ? 100 : 0;
 
     // Get recent activity
     const recentActivity = await prisma.activity.findMany({
@@ -80,9 +130,9 @@ export async function GET() {
       totalReviews,
       pendingReviews,
       monthlyGrowth: {
-        users: monthlyUsers,
-        products: monthlyProducts,
-        revenue: monthlyRevenue._sum.price || 0,
+        users: userGrowth,
+        products: productGrowth,
+        revenue: currentMonthRevenue._sum.price || 0,
       },
     };
 
@@ -93,31 +143,8 @@ export async function GET() {
   } catch (error) {
     console.error("Dashboard API error:", error);
 
-    // Handle specific authentication errors
-    if (error instanceof Error) {
-      if (error.message.includes("Build environment")) {
-        console.log("Build environment detected, returning empty dashboard data");
-        return NextResponse.json({
-          stats: {
-            totalUsers: 0,
-            totalProducts: 0,
-            totalRevenue: 0,
-            pendingProducts: 0,
-            approvedProducts: 0,
-            rejectedProducts: 0,
-            soldProducts: 0,
-            totalReviews: 0,
-            pendingReviews: 0,
-            monthlyGrowth: {
-              users: 0,
-              products: 0,
-              revenue: 0,
-            },
-          },
-          recentActivity: [],
-        });
-      }
-
+    // Handle specific authentication errors (only for runtime, not build time)
+    if (!isBuildTime && error instanceof Error) {
       if (error.message.includes("Authentication required") || error.message.includes("Admin access required")) {
         console.log("Dashboard authentication failed:", error.message);
         return NextResponse.json(

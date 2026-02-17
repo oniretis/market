@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Package,
@@ -14,7 +15,8 @@ import {
   Clock,
   ShoppingCart,
   Star,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 
 interface DashboardStats {
@@ -49,21 +51,53 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setRefreshing(true);
+      }
+      console.log('Fetching dashboard data...');
       const response = await fetch("/api/admin/dashboard");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Dashboard API error:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('Dashboard data received:', data);
       setStats(data.stats);
       setRecentActivity(data.recentActivity);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      // Set default values to prevent UI crashes
+      setStats({
+        totalUsers: 0,
+        totalProducts: 0,
+        totalRevenue: 0,
+        pendingProducts: 0,
+        approvedProducts: 0,
+        rejectedProducts: 0,
+        soldProducts: 0,
+        totalReviews: 0,
+        pendingReviews: 0,
+        monthlyGrowth: {
+          users: 0,
+          products: 0,
+          revenue: 0,
+        },
+      });
+      setRecentActivity([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -84,9 +118,21 @@ export function AdminDashboard() {
             Platform overview and management
           </p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          Last updated: {new Date().toLocaleString()}
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchDashboardData(true)}
+            disabled={refreshing}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </Button>
+          <Badge variant="outline" className="text-sm">
+            Last updated: {new Date().toLocaleString()}
+          </Badge>
+        </div>
       </div>
 
       {/* Overview Cards */}
