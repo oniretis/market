@@ -88,12 +88,21 @@ export function ProductApprovalList() {
     try {
       console.log('Fetching products from admin API...');
       const data = await apiRequest<{ products: Product[] }>('/api/admin/products');
-      console.log('API response:', data);
-      setProducts(data.products || []);
-      console.log(`Set ${data.products?.length || 0} products`);
+      console.log('API response received:', data);
+      console.log('Products array:', data.products);
+      console.log('Products length:', data.products?.length || 0);
+
+      if (data.products && Array.isArray(data.products)) {
+        setProducts(data.products);
+        console.log(`Successfully set ${data.products.length} products in state`);
+      } else {
+        console.error('Invalid products data format:', data);
+        setProducts([]);
+      }
     } catch (error) {
       console.error('Failed to fetch products:', error);
       toast.error('Failed to fetch products', 'Error');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -177,6 +186,7 @@ export function ProductApprovalList() {
   };
 
   const filteredProducts = products.filter(product => {
+    console.log('Filtering product:', product.name, 'Status:', product.status, 'Active tab:', activeTab);
     switch (activeTab) {
       case "pending":
         return product.status === "PENDING";
@@ -185,9 +195,12 @@ export function ProductApprovalList() {
       case "rejected":
         return product.status === "REJECTED";
       default:
+        console.log('Default case - returning true for product:', product.name);
         return true;
     }
   });
+
+  console.log('Filtered products count:', filteredProducts.length);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading products...</div>;
