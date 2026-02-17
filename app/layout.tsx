@@ -15,6 +15,9 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "./components/ui/error-boundary";
 import { ToastProvider } from "./components/ui/simple-toast";
 
+// Force dynamic rendering for the entire app
+export const dynamic = 'force-dynamic';
+
 
 export const metadata: Metadata = {
   title: "Heywhymarketplace",
