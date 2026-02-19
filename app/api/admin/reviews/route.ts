@@ -40,7 +40,16 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ reviews });
+    // Transform the data to match the frontend interface
+    const transformedReviews = reviews.map(review => ({
+      ...review,
+      user: review.User,
+      product: review.Product,
+      User: undefined,
+      Product: undefined,
+    }));
+
+    return NextResponse.json({ reviews: transformedReviews });
   } catch (error) {
     console.error("Reviews API error:", error);
 

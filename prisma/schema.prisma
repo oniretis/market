@@ -22,6 +22,9 @@ model User {
   Advertisement Advertisement[]
   Product       Product[]
   Review        Review[]
+  ChatConversation ChatConversation[] @relation("UserConversations")
+  AdminConversation ChatConversation[] @relation("AdminConversations")
+  Message       Message[]
 
   @@index([role])
   @@index([isActive])
@@ -64,6 +67,7 @@ model Product {
   User             User          @relation(fields: [userId], references: [id])
   Tag              ProductTag[]
   Review           Review[]
+  ChatConversation ChatConversation[]
 
   @@index([status])
   @@index([createdAt])
@@ -122,6 +126,45 @@ model Activity {
   @@index([userId])
 }
 
+model ChatConversation {
+  id          String           @id @default(uuid())
+  productId   String
+  userId      String
+  adminId     String?
+  title       String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Product     Product          @relation(fields: [productId], references: [id])
+  User        User             @relation("UserConversations", fields: [userId], references: [id])
+  Admin       User?            @relation("AdminConversations", fields: [adminId], references: [id])
+  Message     Message[]
+
+  @@index([productId])
+  @@index([userId])
+  @@index([adminId])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  senderId        String
+  content         String
+  messageType     MessageType  @default(TEXT)
+  isRead          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  Conversation    ChatConversation @relation(fields: [conversationId], references: [id])
+  Sender          User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
 model Advertisement {
   id          String    @id @default(uuid())
   title       String
@@ -156,6 +199,12 @@ enum ProductStatus {
   FLAGGED
 }
 
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+}
+
 enum ActivityType {
   USER_REGISTERED
   PRODUCT_CREATED
@@ -173,4 +222,6 @@ enum ActivityType {
   AD_DELETED
   PRODUCT_UPDATED
   PRODUCT_DELETED
+  MESSAGE_SENT
+  CONVERSATION_STARTED
 }

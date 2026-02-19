@@ -5,8 +5,6 @@ const nextConfig = {
     instrumentationHook: false,
     serverComponentsExternalPackages: ['@opentelemetry/api'],
   },
-  // Disable telemetry
-  telemetry: false,
   images: {
     remotePatterns: [
       {

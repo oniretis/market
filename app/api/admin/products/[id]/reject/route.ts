@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/admin";
 import prisma from "@/app/lib/db";
 import { logActivity } from "@/app/lib/admin";
+import { redirect } from "next/navigation";
 
 export async function POST(
   request: Request,
@@ -28,10 +29,8 @@ export async function POST(
       { productId }
     );
 
-    return NextResponse.json({
-      message: "Product rejected successfully",
-      productId
-    });
+    // Redirect back to the admin product page
+    redirect(`/admin/products/${productId}`);
   } catch (error) {
     console.error("Product rejection error:", error);
     return NextResponse.json(

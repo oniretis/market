@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  Image
+  Image,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Reviews", href: "/admin/reviews", icon: MessageSquare },
+  { name: "Chat Support", href: "/admin/chat", icon: MessageCircle },
   { name: "Categories", href: "/admin/categories", icon: FolderOpen },
   { name: "Advertisements", href: "/admin/ads", icon: Image },
   { name: "Analytics", href: "/admin/analytics", icon: TrendingUp },

@@ -150,7 +150,35 @@ async function getData({ category }: iAppProps) {
       };
     }
     default: {
-      return notFound();
+      // Handle dynamic categories
+      if (categoryRecord) {
+        const data = await prisma.product.findMany({
+          where: {
+            categoryId: categoryRecord.id,
+            status: "APPROVED",
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            smallDescription: true,
+            images: true,
+            productVideo: true,
+            location: true,
+            listingType: true,
+            phoneNumber: true,
+          },
+          take: 3,
+        });
+
+        return {
+          title: category.charAt(0).toUpperCase() + category.slice(1),
+          data: data,
+          link: `/products/${category}`,
+        };
+      } else {
+        return notFound();
+      }
     }
   }
 }

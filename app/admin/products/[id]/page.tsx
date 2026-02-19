@@ -85,7 +85,7 @@ export default async function AdminProductPage({
   params: { id: string };
 }) {
   noStore();
-  await requireAdmin();
+
   const data = await getData(params.id);
 
   return (
@@ -302,24 +302,24 @@ export default async function AdminProductPage({
               <div className="space-y-2">
                 {data.status === "PENDING" && (
                   <>
-                    <Button
-                      variant="default"
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      asChild
-                    >
-                      <Link href={`/api/admin/products/${data.id}/approve`}>
+                    <form action={`/api/admin/products/${data.id}/approve`} method="POST">
+                      <Button
+                        type="submit"
+                        variant="default"
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
                         Approve Product
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/api/admin/products/${data.id}/reject`}>
+                      </Button>
+                    </form>
+                    <form action={`/api/admin/products/${data.id}/reject`} method="POST">
+                      <Button
+                        type="submit"
+                        variant="destructive"
+                        className="w-full"
+                      >
                         Reject Product
-                      </Link>
-                    </Button>
+                      </Button>
+                    </form>
                   </>
                 )}
               </div>

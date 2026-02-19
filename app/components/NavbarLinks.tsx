@@ -30,16 +30,27 @@ export function NavbarLinks() {
           const data = await response.json();
           const categories = data.categories || [];
 
-          // Only show categories that have approved products
+          // Only show categories that have approved products (API already filters this)
+          // Limit to 3 categories since Home link already takes 1 slot (max 4 total)
           const categoriesWithProducts = categories
-            .filter((cat: any) => cat.count > 0)
+            .slice(0, 3) // Max 3 categories + Home = 4 total links
+            .filter((cat: any, index: number, self: any[]) =>
+              self.findIndex((c: any) => c.name.toLowerCase() === cat.name.toLowerCase()) === index
+            ) // Remove duplicates
             .map((cat: any, index: number) => ({
               id: index + 1,
               name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1),
               href: `/products/${cat.name}`,
             }));
 
-          setNavbarLinks(prev => [...prev, ...categoriesWithProducts]);
+          setNavbarLinks([
+            {
+              id: 0,
+              name: "Home",
+              href: "/",
+            },
+            ...categoriesWithProducts
+          ]);
         }
       } catch (error) {
         console.error("Failed to fetch categories:", error);

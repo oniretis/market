@@ -23,6 +23,7 @@ export function ProductVideoUpload({
 
   const handleUploadComplete = useCallback((res: any[]) => {
     setIsUploading(false);
+    toast.dismiss();
     if (res.length > 0) {
       onChange(res[0].url);
       toast.success("Product video uploaded successfully");
@@ -36,6 +37,7 @@ export function ProductVideoUpload({
 
   const handleUploadError = useCallback((error: Error) => {
     setIsUploading(false);
+    toast.dismiss();
     toast.error("Upload failed: " + error.message);
   }, []);
 

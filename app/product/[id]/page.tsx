@@ -1,9 +1,12 @@
 import { BuyProduct } from "@/app/actions";
 import { ProductDescription } from "@/app/components/ProductDescription";
 import { BuyButton } from "@/app/components/SubmitButtons";
+import { ProductReviews } from "@/app/components/ProductReviews";
+import ChatWidget from "@/app/components/ChatWidget";
 import prisma from "@/app/lib/db";
 import { Button } from "@/components/ui/button";
 import { unstable_noStore as noStore } from "next/cache";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 import {
   Carousel,
@@ -55,6 +58,11 @@ export default async function ProductPage({
   params: { id: string };
 }) {
   noStore();
+
+  // Get user authentication status (same pattern as other pages)
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+
   const data = await getData(params.id);
   return (
     <section className="mx-auto px-4  lg:mt-10 max-w-7xl lg:px-8 lg:grid lg:grid-rows-1 lg:grid-cols-7 lg:gap-x-8 lg:gap-y-10 xl:gap-x-16">
@@ -177,6 +185,36 @@ export default async function ProductPage({
       <div className="w-full max-w-2xl mx-auto mt-16 lg:max-w-none lg:mt-0 lg:col-span-4 dark:text-white">
         <ProductDescription content={data?.description as JSONContent} />
       </div>
+
+      <div className="w-full max-w-2xl mx-auto mt-5 lg:max-w-none lg:mt-0 lg:col-span-7">
+        <ProductReviews
+          productId={params.id}
+          isAuthenticated={!!user}
+          user={user ? {
+            id: user.id,
+            firstName: user.given_name,
+            lastName: user.family_name,
+            email: user.email || ""
+          } : undefined}
+        />
+      </div>
+
+      {/* Chat Widget */}
+      {data && (
+        <ChatWidget
+          productId={data.id}
+          productName={data.name}
+          productImage={data.images[0] as string}
+          category={data.Category?.name}
+          isAuthenticated={!!user}
+          user={user ? {
+            id: user.id,
+            firstName: user.given_name,
+            lastName: user.family_name,
+            email: user.email || ""
+          } : undefined}
+        />
+      )}
     </section>
   );
 }

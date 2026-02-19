@@ -5,7 +5,7 @@ export async function GET() {
   try {
     // Get categories with product counts (only approved products)
     const categories = await prisma.category.findMany({
-      where: { 
+      where: {
         isActive: true,
         Product: {
           some: {
@@ -27,6 +27,7 @@ export async function GET() {
       orderBy: {
         name: 'asc',
       },
+      take: 3, // Limit to 3 categories since navbar shows Home + 3 categories = 4 total
     });
 
     const formattedCategories = categories.map(cat => ({

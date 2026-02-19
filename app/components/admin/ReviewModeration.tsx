@@ -25,12 +25,12 @@ interface Review {
   comment: string | null;
   isApproved: boolean;
   createdAt: string;
-  user: {
+  user?: {
     firstName: string;
     lastName: string;
     email: string;
   };
-  product: {
+  product?: {
     id: string;
     name: string;
   };
@@ -180,15 +180,15 @@ export function ReviewModeration() {
                         <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
-                            {review.user.firstName} {review.user.lastName}
+                            {review.user?.firstName || 'Unknown'} {review.user?.lastName || 'User'}
                           </div>
                           <div className="flex items-center">
                             <Package className="h-4 w-4 mr-1" />
                             <span
                               className="hover:text-blue-600 cursor-pointer"
-                              onClick={() => window.open(`/product/${review.product.id}`, '_blank')}
+                              onClick={() => review.product?.id && window.open(`/product/${review.product.id}`, '_blank')}
                             >
-                              {review.product.name}
+                              {review.product?.name || 'Unknown Product'}
                             </span>
                           </div>
                         </div>
@@ -199,7 +199,8 @@ export function ReviewModeration() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/product/${review.product.id}`, '_blank')}
+                          onClick={() => review.product?.id && window.open(`/product/${review.product.id}`, '_blank')}
+                          disabled={!review.product?.id}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View Product
