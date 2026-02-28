@@ -1,6 +1,6 @@
 import { Server as NetServer } from 'http';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Server as ServerIO } from 'socket.io';
+import { Server as ServerIO, Socket } from 'socket.io';
 
 export const config = {
   api: {
@@ -29,7 +29,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse & { socket: any
     const activeUsers = new Map<string, string>(); // userId -> socketId
     const adminSockets = new Set<string>(); // admin socketIds
 
-    io.on('connection', (socket) => {
+    io.on('connection', (socket: any) => {
       console.log('Client connected:', socket.id);
 
       // User joins with their user ID and role
@@ -72,7 +72,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse & { socket: any
       });
 
       // Handle new message
-      socket.on('send_message', (data) => {
+      socket.on('send_message', (data: any) => {
         console.log('New message:', data);
 
         // Broadcast to conversation room
@@ -141,7 +141,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse & { socket: any
       });
 
       // Error handling
-      socket.on('error', (error) => {
+      socket.on('error', (error: any) => {
         console.error('Socket error:', error);
       });
     });

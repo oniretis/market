@@ -21,6 +21,7 @@ export interface Conversation {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  adminId?: string;
   User: {
     id: string;
     firstName: string;
@@ -28,6 +29,12 @@ export interface Conversation {
     email: string;
     isOnline?: boolean;
     profileImage?: string;
+  };
+  Admin?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
   };
   Product: {
     id: string;

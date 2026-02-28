@@ -58,7 +58,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     }
 
     // Handle search parameter changes
-    if (pathname === currentPath && pathname && searchParams.toString()) {
+    if (pathname === currentPath && searchParams?.toString()) {
       // For search/filter changes, show a shorter loading
       showLoading("Updating...");
       timeoutRef.current = setTimeout(() => {

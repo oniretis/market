@@ -1,16 +1,17 @@
 'use client';
 
+import Image from "next/image";
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ShoppingCart, 
-  Package, 
-  CreditCard, 
-  CheckCircle, 
-  XCircle, 
+import {
+  ShoppingCart,
+  Package,
+  CreditCard,
+  CheckCircle,
+  XCircle,
   Clock,
   Download,
   ExternalLink
@@ -162,7 +163,7 @@ export default function PaymentHistory({ userId }: PaymentHistoryProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -174,7 +175,7 @@ export default function PaymentHistory({ userId }: PaymentHistoryProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -186,7 +187,7 @@ export default function PaymentHistory({ userId }: PaymentHistoryProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -253,9 +254,11 @@ function TransactionList({ transactions, getStatusColor, getStatusIcon }: Transa
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                <img
+                <Image
                   src={transaction.Product.images[0] || '/placeholder-product.jpg'}
                   alt={transaction.Product.name}
+                  width={48}
+                  height={48}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -266,7 +269,7 @@ function TransactionList({ transactions, getStatusColor, getStatusIcon }: Transa
                 </p>
               </div>
             </div>
-            
+
             <div className="text-right">
               <p className="font-bold text-lg">{formatCurrency(transaction.amount)}</p>
               <Badge className={getStatusColor(transaction.status)}>
@@ -285,7 +288,7 @@ function TransactionList({ transactions, getStatusColor, getStatusIcon }: Transa
                 <p>Paid: {new Date(transaction.paidAt).toLocaleDateString()}</p>
               )}
             </div>
-            
+
             <div className="flex space-x-2">
               {transaction.status === 'SUCCESS' && (
                 <>

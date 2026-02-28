@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -206,7 +207,7 @@ export function SearchResults({ initialQuery }: SearchResultsProps) {
 
           <h1 className="text-3xl font-bold mb-2">Search Products</h1>
           <p className="text-muted-foreground">
-            Find exactly what you're looking for in our marketplace
+            Find exactly what you&apos;re looking for in our marketplace
           </p>
         </div>
 
@@ -290,9 +291,11 @@ export function SearchResults({ initialQuery }: SearchResultsProps) {
                         <Link href={`/product/${product.id}`}>
                           <div className="aspect-square rounded-t-lg overflow-hidden bg-muted">
                             {product.images[0] ? (
-                              <img
+                              <Image
                                 src={product.images[0]}
                                 alt={product.name}
+                                width={300}
+                                height={300}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             ) : (

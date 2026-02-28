@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     // Update transaction based on verification
     let updatedTransaction;
-    if (paymentData.status === 'success') {
+    if (paymentData && paymentData.status === 'success') {
       // Mark product as sold
       await prisma.product.update({
         where: { id: transaction.productId },
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
             transactionId: transaction.id,
             amount: transaction.amount,
             reference: reference,
-            gatewayResponse: paymentData.gateway_response
+            gatewayResponse: paymentData?.gateway_response || ''
           }
         }
       });

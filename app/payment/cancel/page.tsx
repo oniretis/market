@@ -13,7 +13,7 @@ export default function CancelRoute() {
           </div>
           <CardTitle className="text-red-600">Payment Canceled</CardTitle>
           <CardDescription>
-            Your payment was canceled and you haven't been charged
+            Your payment was canceled and you haven&apos;t been charged
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

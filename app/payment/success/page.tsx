@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface PaymentData {
   transaction: {
@@ -41,7 +42,7 @@ interface PaymentData {
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const reference = searchParams.get('reference');
+  const reference = searchParams?.get('reference');
   const [isLoading, setIsLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -175,9 +176,11 @@ export default function PaymentSuccessPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
-                <img
+                <Image
                   src={product.images[0] || '/placeholder-product.jpg'}
                   alt={product.name}
+                  width={600}
+                  height={400}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -204,7 +207,7 @@ export default function PaymentSuccessPage() {
         {/* Next Steps */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>What's Next?</CardTitle>
+            <CardTitle>What&apos;s Next?</CardTitle>
             <CardDescription>Important information about your purchase</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

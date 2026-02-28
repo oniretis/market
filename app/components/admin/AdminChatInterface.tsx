@@ -59,8 +59,10 @@ interface Conversation {
     images: string[];
   };
   User: {
+    id: string;
     firstName: string;
     lastName: string;
+    profileImage: string;
   };
   Admin?: {
     firstName: string;

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Wifi, WifiOff } from 'lucide-react';
+import { MessageCircle, Wifi, WifiOff, Clock, MessageSquare, UserCheck } from 'lucide-react';
 import SortDropdown from './sort-dropdown';
 import { Conversation } from './types';
 import ConversationCard from './ConversationCard';
@@ -17,7 +17,7 @@ interface ConversationListProps {
   onStatusFilterChange: (filter: string) => void;
   onSortByChange: (sortBy: string) => void;
   onConversationSelect: (conversation: Conversation) => void;
-  getStatusBadge: (conversation: Conversation) => React.ReactNode;
+  getStatusBadge: (conversation: Conversation) => string;
   formatTime: (dateString: string) => string;
 }
 
@@ -34,6 +34,13 @@ export default function ConversationList({
   getStatusBadge,
   formatTime
 }: ConversationListProps) {
+  const sortOptions = [
+    { value: 'recent', label: 'Recent Activity', icon: <Clock className="h-3 w-3" /> },
+    { value: 'newest', label: 'Newest Messages', icon: <MessageSquare className="h-3 w-3" /> },
+    { value: 'unread', label: 'Unread First', icon: <MessageCircle className="h-3 w-3" /> },
+    { value: 'active', label: 'Active Users', icon: <UserCheck className="h-3 w-3" /> },
+  ];
+
   return (
     <div className="w-96 border rounded-lg overflow-hidden">
       <div className="p-4 border-b bg-white">
@@ -67,8 +74,9 @@ export default function ConversationList({
             Active
           </Button>
           <SortDropdown
-            currentSort={sortBy}
-            onSortChange={onSortByChange}
+            options={sortOptions}
+            value={sortBy}
+            onChange={onSortByChange}
           />
         </div>
       </div>

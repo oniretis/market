@@ -106,7 +106,7 @@ export function SearchBar() {
           setResults(data.products);
           setSuggestions(data.suggestions || []);
           setCategories(data.categories || []);
-          setIsOpen(data.products.length > 0 || data.suggestions.length > 0 || data.categories.length > 0);
+          setIsOpen(data.products.length > 0 || !!(data.suggestions && data.suggestions.length > 0) || !!(data.categories && data.categories.length > 0));
         } else {
           setResults([]);
           setIsOpen(false);
@@ -441,7 +441,7 @@ export function SearchBar() {
               <div className="p-6 text-center">
                 <Search className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No products found for "{query}"
+                  No products found for &quot;{query}&quot;
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Try different keywords or browse categories

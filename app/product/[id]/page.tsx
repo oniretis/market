@@ -136,9 +136,11 @@ export default async function ProductPage({
     user: data.User,
     reviews: data.Review?.map(review => ({
       rating: review.rating,
-      comment: review.comment,
+      comment: review.comment || '',
       createdAt: review.createdAt,
-      user: { firstName: review.User.firstName },
+      user: {
+        firstName: review.User?.firstName || '',
+      },
     })) || [],
   });
 

@@ -208,3 +208,24 @@ export function createPaginationMetadata(basePath: string, page: number, totalPa
     },
   };
 }
+
+// Create breadcrumb structured data
+export function createBreadcrumbStructuredData(breadcrumbs: Array<{ name: string; url: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((breadcrumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: breadcrumb.name,
+      item: `${siteConfig.url}${breadcrumb.url}`,
+    })),
+  };
+}
+
+// Generate JSON-LD string for structured data
+export function generateJSONLD(data: object): { __html: string } {
+  return {
+    __html: JSON.stringify(data),
+  };
+}

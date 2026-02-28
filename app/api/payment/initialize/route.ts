@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     });
 
     const paystackResponse = await paystackInstance.transaction.initialize({
-      amount: expectedAmount,
+      amount: expectedAmount.toString(),
       email: email,
       reference: transaction.id, // Use our transaction ID as reference
       callback_url: callback_url || `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success`,

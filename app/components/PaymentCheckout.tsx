@@ -148,7 +148,7 @@ export default function PaymentCheckout({ product, user }: PaymentCheckoutProps)
         },
         body: JSON.stringify({
           productId: product.id,
-          email: user.email,
+          email: user?.email || '',
           amount: Math.round(product.price * 100), // Convert to kobo and ensure integer
           callback_url: `${window.location.origin}/payment/success?reference=REFERENCE`,
         }),

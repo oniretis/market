@@ -71,8 +71,8 @@ export function BulkOperations() {
       }, {});
 
       message += '\n\nAlready processed products:';
-      Object.entries(processedByStatus).forEach(([status, count]: [string, number]) => {
-        message += `\n- ${count} product(s) already ${status.toLowerCase()}`;
+      Object.entries(processedByStatus).forEach(([status, count]) => {
+        message += `\n- ${count} product(s) already ${(status as string).toLowerCase()}`;
       });
     }
 

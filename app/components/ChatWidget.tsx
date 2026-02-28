@@ -158,7 +158,7 @@ export default function ChatWidget({ productId, productName, productImage, categ
     const handleConversationUpdated = (data: { conversationId: string; status: string }) => {
       if (conversation && data.conversationId === conversation.id) {
         // Update conversation status if needed
-        setConversation(prev => prev ? { ...prev, isActive: data.status === 'open' } : null);
+        setConversation((prev: any) => prev ? { ...prev, isActive: data.status === 'open' } : null);
       }
     };
 
