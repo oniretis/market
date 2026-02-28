@@ -55,6 +55,30 @@ export function BulkOperations() {
     }
   };
 
+  const showOperationResult = (result: any) => {
+    let message = result.message;
+
+    // Add detailed information about not found products
+    if (result.notFoundIds && result.notFoundIds.length > 0) {
+      message += `\n\n${result.notFoundIds.length} product(s) were not found (may have been deleted).`;
+    }
+
+    // Add information about already processed products
+    if (result.alreadyProcessed && result.alreadyProcessed.length > 0) {
+      const processedByStatus = result.alreadyProcessed.reduce((acc: any, product: any) => {
+        acc[product.status] = (acc[product.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      message += '\n\nAlready processed products:';
+      Object.entries(processedByStatus).forEach(([status, count]: [string, number]) => {
+        message += `\n- ${count} product(s) already ${status.toLowerCase()}`;
+      });
+    }
+
+    alert(message);
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedProducts(products.map(p => p.id));
@@ -85,8 +109,13 @@ export function BulkOperations() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        showOperationResult(result);
         setSelectedProducts([]);
         fetchProducts();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error("Failed to bulk approve:", error);
@@ -109,8 +138,13 @@ export function BulkOperations() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        showOperationResult(result);
         setSelectedProducts([]);
         fetchProducts();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error("Failed to bulk reject:", error);
@@ -137,8 +171,13 @@ export function BulkOperations() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        showOperationResult(result);
         setSelectedProducts([]);
         fetchProducts();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error("Failed to bulk delete:", error);

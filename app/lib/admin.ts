@@ -21,11 +21,36 @@ export async function getCurrentUser() {
   }
 
   console.log('getCurrentUser: Looking up user in database with ID:', user.id);
-  const dbUser = await prisma.user.findUnique({
+  let dbUser = await prisma.user.findUnique({
     where: {
       id: user.id,
     },
   });
+
+  // Create user if not found in database
+  if (!dbUser) {
+    console.log('getCurrentUser: User not found in database, creating new user');
+    try {
+      dbUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          firstName: user.given_name ?? "",
+          lastName: user.family_name ?? "",
+          email: user.email ?? "",
+          profileImage: user.picture ?? `https://avatar.vercel.sh/${user.given_name}`,
+          role: "USER", // Explicitly set role to USER for new users
+        },
+      });
+      console.log('getCurrentUser: Created new user:', {
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role
+      });
+    } catch (error) {
+      console.error('getCurrentUser: Failed to create user:', error);
+      return null;
+    }
+  }
 
   console.log('getCurrentUser: Database user result:', {
     found: !!dbUser,

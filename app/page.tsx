@@ -1,6 +1,15 @@
 import { ProductRow } from "./components/ProductRow";
 import Hero from "./components/Hero";
 import prisma from "./lib/db";
+import { createPageMetadata, generateJSONLD, createBreadcrumbStructuredData } from "./lib/seo";
+import { Metadata } from "next";
+
+// SEO metadata for home page
+export const metadata: Metadata = createPageMetadata({
+  title: "Home - Buy and Sell Products Online",
+  description: "Discover amazing products for sale in our trusted marketplace. Browse categories, find great deals, and sell your items easily.",
+  keywords: ["marketplace", "buy and sell", "online shopping", "classifieds", "local marketplace"],
+});
 
 async function getCategoriesWithApprovedProducts() {
   try {
@@ -69,7 +78,7 @@ export default async function Home() {
     );
   } catch (error) {
     console.error('Home page error:', error);
-    
+
     // Fallback UI if something goes wrong
     return (
       <main>

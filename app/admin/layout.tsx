@@ -2,6 +2,8 @@ import { requireAdmin } from "@/app/lib/admin";
 import { AdminNavWrapper } from "@/app/components/admin/AdminNavWrapper";
 import { ToastProvider } from "../components/ui/simple-toast";
 import ErrorBoundary from "../components/ui/error-boundary";
+import { AdminMainContent } from "@/app/components/admin/AdminMainContent";
+import { SidebarProvider } from "@/app/components/admin/SidebarContext";
 
 export default async function AdminLayout({
   children,
@@ -34,14 +36,16 @@ export default async function AdminLayout({
   return (
     <ToastProvider>
       <ErrorBoundary>
-        <div className="min-h-screen bg-gray-50 flex">
-          <AdminNavWrapper />
-          <main className="flex-1 lg:pl-0">
-            <div className="h-full">
-              {children}
-            </div>
-          </main>
-        </div>
+        <SidebarProvider>
+          <div className="min-h-screen bg-gray-50 flex">
+            <AdminNavWrapper />
+            <AdminMainContent>
+              <div className="h-full">
+                {children}
+              </div>
+            </AdminMainContent>
+          </div>
+        </SidebarProvider>
       </ErrorBoundary>
     </ToastProvider>
   );

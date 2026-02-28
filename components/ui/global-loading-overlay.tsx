@@ -3,11 +3,16 @@
 import { useLoadingManager } from "../../app/lib/loading-manager";
 import { LoadingSpinner } from "./loading-spinner";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 export function GlobalLoadingOverlay({ className }: { className?: string }) {
   const { isLoading, loadingMessage } = useLoadingManager();
+  const pathname = usePathname();
 
-  if (!isLoading) return null;
+  // Don't show loading overlay on payment pages
+  if (!isLoading || (pathname && pathname.startsWith('/payment/'))) {
+    return null;
+  }
 
   return (
     <div className={cn(

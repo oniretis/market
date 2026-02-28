@@ -4,6 +4,7 @@ import { NavbarLinks } from "./NavbarLinks";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SearchBar } from "./SearchBar";
 import {
   LoginLink,
   RegisterLink,
@@ -42,9 +43,10 @@ export async function Navbar() {
           </Link>
         </div>
 
-        {/* Center Links */}
-        <div className="hidden md:flex md:col-span-6 justify-center">
+        {/* Center Section - Links and Search */}
+        <div className="hidden md:flex md:col-span-6 items-center justify-center gap-6">
           <NavbarLinks />
+          <SearchBar />
         </div>
 
         {/* Right Section */}

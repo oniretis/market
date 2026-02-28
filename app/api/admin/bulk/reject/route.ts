@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/admin";
 import { logActivity } from "@/app/lib/admin";
+import prisma from "@/app/lib/db";
 
 export async function POST(request: Request) {
+  // Skip authentication during build/static generation
+  const isBuildTime = process.env.NEXT_PHASE === "phase-production-build" ||
+    (process.env.NODE_ENV === "development" && process.env.npm_lifecycle_event === "build");
+
+  // During build time, return empty response to avoid database connection issues
+  if (isBuildTime) {
+    console.log("Build environment detected, skipping bulk reject");
+    return NextResponse.json({ message: "Build time - operation skipped" });
+  }
   try {
     const admin = await requireAdmin();
     const { productIds } = await request.json();
@@ -14,27 +24,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // For now, just return success since status field isn't in the schema yet
-    // In the future, this will update multiple products status to REJECTED
-    // await prisma.product.updateMany({
-    //   where: { id: { in: productIds } },
-    //   data: {
-    //     status: "REJECTED",
-    //     approvedBy: admin.id,
-    //   },
-    // });
+    // First verify which products actually exist
+    const existingProducts = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, status: true }
+    });
 
-    // Log the activity
+    if (existingProducts.length === 0) {
+      return NextResponse.json(
+        { error: "No valid products found to reject" },
+        { status: 404 }
+      );
+    }
+
+    const existingProductIds = existingProducts.map(p => p.id);
+    const notFoundIds = productIds.filter(id => !existingProductIds.includes(id));
+
+    // Filter to only pending products
+    const pendingProducts = existingProducts.filter(p => p.status === "PENDING");
+    const pendingIds = pendingProducts.map(p => p.id);
+
+    let result = { count: 0 };
+    if (pendingIds.length > 0) {
+      result = await prisma.product.updateMany({
+        where: {
+          id: { in: pendingIds },
+          status: "PENDING"
+        },
+        data: {
+          status: "REJECTED",
+          approvedBy: admin.id,
+        },
+      });
+    }
+
+    // Log the activity with detailed information
     await logActivity(
       admin.id,
       "BULK_PRODUCT_REJECTED",
-      `${productIds.length} products were bulk rejected`,
-      { productIds, count: productIds.length }
+      `${result.count} products rejected out of ${productIds.length} requested`,
+      {
+        productIds: pendingIds,
+        count: result.count,
+        totalRequested: productIds.length,
+        notFoundIds,
+        alreadyProcessed: existingProducts.filter(p => p.status !== "PENDING").map(p => ({ id: p.id, status: p.status }))
+      }
     );
 
-    return NextResponse.json({ 
-      message: `${productIds.length} products rejected successfully`,
-      count: productIds.length 
+    return NextResponse.json({
+      message: `${result.count} products rejected successfully${notFoundIds.length > 0 ? ` (${notFoundIds.length} not found)` : ''}`,
+      count: result.count,
+      totalRequested: productIds.length,
+      notFoundIds,
+      alreadyProcessed: existingProducts.filter(p => p.status !== "PENDING").map(p => ({ id: p.id, name: p.name, status: p.status }))
     });
   } catch (error) {
     console.error("Bulk reject error:", error);

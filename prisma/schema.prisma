@@ -25,6 +25,7 @@ model User {
   ChatConversation ChatConversation[] @relation("UserConversations")
   AdminConversation ChatConversation[] @relation("AdminConversations")
   Message       Message[]
+  PaymentTransaction PaymentTransaction[]
 
   @@index([role])
   @@index([isActive])
@@ -68,6 +69,7 @@ model Product {
   Tag              ProductTag[]
   Review           Review[]
   ChatConversation ChatConversation[]
+  PaymentTransaction PaymentTransaction[]
 
   @@index([status])
   @@index([createdAt])
@@ -145,6 +147,8 @@ model ChatConversation {
   @@index([adminId])
   @@index([isActive])
   @@index([createdAt])
+  @@index([isActive, updatedAt]) // For active conversations sorting
+  @@index([adminId, isActive]) // For admin's active conversations
 }
 
 model Message {
@@ -160,15 +164,18 @@ model Message {
   Sender          User         @relation(fields: [senderId], references: [id])
 
   @@index([conversationId])
+  @@index([conversationId, createdAt]) // For message ordering in conversations
   @@index([senderId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([conversationId, isRead]) // For unread message counts
 }
 
 model Advertisement {
   id          String    @id @default(uuid())
   title       String
   imageUrl    String
+  videoUrl    String?
   linkUrl     String?
   description String?
   isActive    Boolean   @default(true)
@@ -179,6 +186,30 @@ model Advertisement {
   updatedAt   DateTime  @updatedAt
   createdBy   String
   User        User      @relation(fields: [createdBy], references: [id])
+}
+
+model PaymentTransaction {
+  id               String              @id @default(uuid())
+  userId           String
+  productId        String
+  amount           Int
+  status           PaymentStatus       @default(PENDING)
+  reference        String              @unique
+  paystackReference String?
+  email            String
+  paymentMethod    String?
+  currency         String              @default("NGN")
+  paidAt           DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  User             User                @relation(fields: [userId], references: [id])
+  Product          Product             @relation(fields: [productId], references: [id])
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@index([reference])
+  @@index([createdAt])
 }
 
 enum ListingType {
@@ -197,6 +228,13 @@ enum ProductStatus {
   APPROVED
   REJECTED
   FLAGGED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
 }
 
 enum MessageType {
@@ -224,4 +262,7 @@ enum ActivityType {
   PRODUCT_DELETED
   MESSAGE_SENT
   CONVERSATION_STARTED
+  PAYMENT_INITIATED
+  PAYMENT_COMPLETED
+  PAYMENT_FAILED
 }

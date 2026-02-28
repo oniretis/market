@@ -14,15 +14,13 @@ import { GlobalLoadingOverlay } from "@/components/ui/global-loading-overlay";
 import { Suspense } from "react";
 import { ErrorBoundary } from "./components/ui/error-boundary";
 import { ToastProvider } from "./components/ui/simple-toast";
+import { createBaseMetadata } from "./lib/seo";
+import { createOrganizationStructuredData, createWebsiteStructuredData, generateJSONLD } from "./lib/structured-data";
 
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic';
 
-
-export const metadata: Metadata = {
-  title: "Heywhymarketplace",
-  description: "Buy and sell products online",
-};
+export const metadata: Metadata = createBaseMetadata();
 
 export default function RootLayout({
   children,
@@ -31,6 +29,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={generateJSONLD(createOrganizationStructuredData())}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={generateJSONLD(createWebsiteStructuredData())}
+        />
+      </head>
       <body className="font-sans">
         <ThemeProvider
           attribute="class"

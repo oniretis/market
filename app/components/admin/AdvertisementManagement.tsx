@@ -10,14 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Edit, Plus, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { Trash2, Edit, Plus, ExternalLink, Image as ImageIcon, Video, Play } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "../ImageUpload";
+import VideoUpload from "../VideoUpload";
 
 interface Advertisement {
   id: string;
   title: string;
   imageUrl: string;
+  videoUrl?: string;
   linkUrl?: string;
   description?: string;
   isActive: boolean;
@@ -40,6 +42,7 @@ export default function AdvertisementManagement() {
   const [formData, setFormData] = useState({
     title: "",
     imageUrls: [] as string[],
+    videoUrl: "",
     linkUrl: "",
     description: "",
     isActive: true,
@@ -71,6 +74,7 @@ export default function AdvertisementManagement() {
     setFormData({
       title: "",
       imageUrls: [],
+      videoUrl: "",
       linkUrl: "",
       description: "",
       isActive: true,
@@ -84,8 +88,8 @@ export default function AdvertisementManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.imageUrls.length === 0) {
-      toast.error("Please upload at least one image");
+    if (formData.imageUrls.length === 0 && !formData.videoUrl) {
+      toast.error("Please upload an image or video");
       return;
     }
 
@@ -100,7 +104,7 @@ export default function AdvertisementManagement() {
         },
         body: JSON.stringify({
           ...formData,
-          imageUrl: formData.imageUrls[0] // Use first image as primary
+          imageUrl: formData.imageUrls[0] || "" // Use first image as primary, empty if no image
         }),
       });
 
@@ -124,6 +128,7 @@ export default function AdvertisementManagement() {
     setFormData({
       title: ad.title,
       imageUrls: ad.imageUrl ? [ad.imageUrl] : [],
+      videoUrl: ad.videoUrl || "",
       linkUrl: ad.linkUrl || "",
       description: ad.description || "",
       isActive: ad.isActive,
@@ -226,6 +231,19 @@ export default function AdvertisementManagement() {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-sm font-medium">Advertisement Video (optional)</Label>
+                <VideoUpload
+                  value={formData.videoUrl}
+                  onChange={(url) => setFormData({ ...formData, videoUrl: url })}
+                />
+                {formData.videoUrl && (
+                  <p className="text-xs text-muted-foreground">
+                    Video will be displayed instead of image in the carousel
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="linkUrl" className="text-sm font-medium">Link URL (optional)</Label>
                 <Input
                   id="linkUrl"
@@ -315,7 +333,16 @@ export default function AdvertisementManagement() {
                 <div className="flex items-start gap-6">
                   <div className="flex-shrink-0">
                     <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-muted">
-                      {ad.imageUrl ? (
+                      {ad.videoUrl ? (
+                        <video
+                          src={ad.videoUrl}
+                          className="h-20 w-20 object-cover"
+                          muted
+                          loop
+                          onMouseEnter={(e) => e.currentTarget.play()}
+                          onMouseLeave={(e) => e.currentTarget.pause()}
+                        />
+                      ) : ad.imageUrl ? (
                         <Image
                           src={ad.imageUrl}
                           alt={ad.title}
@@ -333,9 +360,22 @@ export default function AdvertisementManagement() {
                         />
                       ) : (
                         <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center">
-                          <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                          {ad.videoUrl ? (
+                            <Video className="h-8 w-8 text-muted-foreground/50" />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                          )}
                         </div>
                       )}
+
+                      {/* Media type indicator */}
+                      <div className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full">
+                        {ad.videoUrl ? (
+                          <Video className="h-3 w-3" />
+                        ) : (
+                          <ImageIcon className="h-3 w-3" />
+                        )}
+                      </div>
                     </div>
                   </div>
 

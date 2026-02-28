@@ -14,8 +14,12 @@ import {
   Minimize2,
   Maximize2,
   User,
-  Crown
+  Crown,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
+import { useSocket } from '@/app/hooks/useSocket';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -24,6 +28,7 @@ interface Message {
   isRead: boolean;
   createdAt: string;
   senderId: string;
+  conversationId?: string; // Added for socket messages
   Sender: {
     id: string;
     firstName: string;
@@ -56,8 +61,13 @@ export default function ChatWidget({ productId, productName, productImage, categ
   const [isSending, setIsSending] = useState(false);
   const [conversation, setConversation] = useState<any>(null);
   const [initError, setInitError] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const { socket, isConnected, error: socketError, join, joinConversation, leaveConversation, sendMessage: sendSocketMessage, startTyping, stopTyping } = useSocket();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,10 +82,12 @@ export default function ChatWidget({ productId, productName, productImage, categ
   }, []);
 
   useEffect(() => {
-    if (isOpen && isAuthenticated) {
+    if (isOpen && isAuthenticated && user) {
+      // Join socket with user info
+      join(user.id, 'USER');
       initializeConversation();
     }
-  }, [isOpen, isAuthenticated, productId]);
+  }, [isOpen, isAuthenticated, productId, user]);
 
   useEffect(() => {
     // Add welcome message when chat opens and there are no messages
@@ -109,6 +121,82 @@ export default function ChatWidget({ productId, productName, productImage, categ
       }, 300);
     }
   }, [isOpen, isMinimized, isLoading, conversation]);
+
+  // Socket event listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (data: Message) => {
+      // Validate message data
+      if (!data || !data.id || !data.content) {
+        console.error('Invalid message received:', data);
+        return;
+      }
+
+      // Only add message if it's not from current user and belongs to this conversation
+      if (data.senderId !== user?.id && conversation && data.conversationId === conversation.id) {
+        setMessages(prev => [...prev, data]);
+
+        // Show notification for incoming admin message
+        if (data.Sender && (data.Sender.role === 'ADMIN' || data.Sender.role === 'SUPER_ADMIN')) {
+          toast.info('New message from admin', {
+            description: data.content.length > 50
+              ? `${data.content.substring(0, 50)}...`
+              : data.content,
+            duration: 4000,
+          });
+        }
+      }
+    };
+
+    const handleUserTyping = (data: { userId: string; isTyping: boolean }) => {
+      if (data.userId !== user?.id) {
+        setOtherUserTyping(data.isTyping);
+      }
+    };
+
+    const handleConversationUpdated = (data: { conversationId: string; status: string }) => {
+      if (conversation && data.conversationId === conversation.id) {
+        // Update conversation status if needed
+        setConversation(prev => prev ? { ...prev, isActive: data.status === 'open' } : null);
+      }
+    };
+
+    const handleAdminAssigned = (data: { conversationId: string; adminId: string }) => {
+      if (conversation && data.conversationId === conversation.id) {
+        // Refresh conversation to get admin info
+        initializeConversation();
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('conversation_updated', handleConversationUpdated);
+    socket.on('admin_assigned', handleAdminAssigned);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('conversation_updated', handleConversationUpdated);
+      socket.off('admin_assigned', handleAdminAssigned);
+    };
+  }, [socket, conversation, user]);
+
+  // Join conversation room when conversation is set
+  useEffect(() => {
+    if (conversation && socket && isConnected) {
+      joinConversation(conversation.id);
+    }
+  }, [conversation, socket, isConnected]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (conversation && socket) {
+        leaveConversation(conversation.id);
+      }
+    };
+  }, [conversation, socket]);
 
   // Removed checkAuthStatus function - auth is now passed as prop
 
@@ -149,18 +237,27 @@ export default function ChatWidget({ productId, productName, productImage, categ
 
   const loadMessages = async (conversationId: string) => {
     try {
-      const response = await fetch(`/api/chat/messages?conversationId=${conversationId}`);
+      const response = await fetch(`/api/chat/messages?conversationId=${conversationId}&limit=50`);
       if (response.ok) {
         const data = await response.json();
-        if (Array.isArray(data)) {
-          setMessages(data);
-        } else {
-          setMessages([]);
-        }
+        // Handle both old format (array) and new format (object with messages)
+        const messagesArray = Array.isArray(data) ? data : (data.messages || []);
+
+        // Filter out any invalid messages and ensure required fields
+        const validMessages = messagesArray.filter((msg: Message) =>
+          msg &&
+          msg.id &&
+          msg.content &&
+          msg.senderId &&
+          msg.Sender
+        );
+        setMessages(validMessages);
       } else {
+        console.error('Failed to load messages:', response.status);
         setMessages([]);
       }
     } catch (error) {
+      console.error('Error loading messages:', error);
       setMessages([]);
     }
   };
@@ -190,12 +287,33 @@ export default function ChatWidget({ productId, productName, productImage, categ
         const message = await response.json();
         setMessages(prev => [...prev, message]);
         setNewMessage('');
+
+        // Show success toast
+        toast.success('Message sent successfully!', {
+          description: 'Your message has been delivered to the admin.',
+          duration: 3000,
+        });
+
+        // Socket.IO broadcasting is handled by the API route, so we don't need to call it here
+        // This prevents duplicate messages
       } else {
         const errorData = await response.json().catch(() => ({}));
         setInitError(errorData.error || 'Failed to send message. Please try again.');
+
+        // Show error toast
+        toast.error('Failed to send message', {
+          description: errorData.error || 'Please try again.',
+          duration: 5000,
+        });
       }
     } catch (error) {
       setInitError('Network error. Please check your connection.');
+
+      // Show error toast
+      toast.error('Connection error', {
+        description: 'Please check your internet connection and try again.',
+        duration: 5000,
+      });
     } finally {
       setIsSending(false);
     }
@@ -208,19 +326,56 @@ export default function ChatWidget({ productId, productName, productImage, categ
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+
+    // Handle typing indicators
+    if (!isTyping && e.target.value.trim()) {
+      setIsTyping(true);
+      if (socket && isConnected && conversation && user) {
+        startTyping(conversation.id, user.id);
+      }
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout to stop typing
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      if (socket && isConnected && conversation && user) {
+        stopTyping(conversation.id, user.id);
+      }
+    }, 1000);
+  };
+
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      if (!dateString) return 'Invalid date';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'Invalid date';
+    }
   };
 
   const formatSenderName = (sender: Message['Sender']) => {
+    if (!sender) return 'Unknown';
+    if (sender.id === 'system') return 'Support Team';
     if (sender.role === 'ADMIN' || sender.role === 'SUPER_ADMIN') {
       return 'Admin';
     }
-    return `${sender.firstName} ${sender.lastName}`;
+    const firstName = sender.firstName || '';
+    const lastName = sender.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || 'Unknown User';
   };
 
   if (!isAuthenticated) {
@@ -269,7 +424,7 @@ export default function ChatWidget({ productId, productName, productImage, categ
           </Button>
         </>
       ) : (
-        <Card className="w-96 h-[500px] shadow-2xl relative z-[9999]">
+        <Card className={`w-96 shadow-2xl relative z-[9999] ${isMinimized ? 'h-auto' : 'h-[500px]'}`}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -294,6 +449,14 @@ export default function ChatWidget({ productId, productName, productImage, categ
                 </div>
               </div>
               <div className="flex items-center space-x-1">
+                {/* Connection status indicator */}
+                <div className="flex items-center space-x-1">
+                  {isConnected ? (
+                    <Wifi className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <WifiOff className="h-3 w-3 text-red-500" />
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -316,41 +479,70 @@ export default function ChatWidget({ productId, productName, productImage, categ
             <CardContent className="flex flex-col h-[calc(100%-80px)] p-0">
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.Sender.role === 'USER' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[80%] ${message.Sender.role === 'USER' ? 'order-2' : 'order-1'}`}>
+                  {messages.map((message) => {
+                    const senderRole = message.Sender?.role || 'USER';
+                    const isUserMessage = senderRole === 'USER';
+
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-[80%] ${isUserMessage ? 'order-2' : 'order-1'}`}>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={message.Sender?.profileImage} />
+                              <AvatarFallback className="text-xs">
+                                {senderRole === 'ADMIN' || senderRole === 'SUPER_ADMIN' ? (
+                                  <Crown className="h-3 w-3" />
+                                ) : (
+                                  <User className="h-3 w-3" />
+                                )}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-gray-500">
+                              {formatSenderName(message.Sender)}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatTime(message.createdAt)}
+                            </span>
+                          </div>
+                          <div
+                            className={`rounded-lg px-3 py-2 text-sm ${isUserMessage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                              }`}
+                          >
+                            {message.content}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Typing indicator */}
+                  {otherUserTyping && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] order-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={message.Sender.profileImage} />
                             <AvatarFallback className="text-xs">
-                              {message.Sender.role === 'ADMIN' || message.Sender.role === 'SUPER_ADMIN' ? (
-                                <Crown className="h-3 w-3" />
-                              ) : (
-                                <User className="h-3 w-3" />
-                              )}
+                              <Crown className="h-3 w-3" />
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-xs text-gray-500">
-                            {formatSenderName(message.Sender)}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {formatTime(message.createdAt)}
-                          </span>
+                          <span className="text-xs text-gray-500">Admin</span>
                         </div>
-                        <div
-                          className={`rounded-lg px-3 py-2 text-sm ${message.Sender.role === 'USER'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
-                            }`}
-                        >
-                          {message.content}
+                        <div className="bg-gray-100 text-gray-900 rounded-lg px-3 py-2 text-sm">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
                   <div ref={messagesEndRef} />
                 </div>
               </div>
@@ -360,7 +552,7 @@ export default function ChatWidget({ productId, productName, productImage, categ
                   <Input
                     ref={inputRef}
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
                     placeholder={
                       isLoading || isSending

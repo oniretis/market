@@ -16,33 +16,66 @@ const defaultImages = [
   "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1974&auto=format&fit=crop",
 ].slice(0, 5); // Ensure max 5 default images
 
+interface Advertisement {
+  id: string;
+  title: string;
+  imageUrl: string;
+  videoUrl?: string;
+  linkUrl?: string;
+  description?: string;
+  position: number;
+}
+
 export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categories, setCategories] = useState<string[]>(["All", "Properties", "Cars", "Mobiles"]);
-  const [carouselImages, setCarouselImages] = useState<string[]>([]);
+  const [carouselAds, setCarouselAds] = useState<Advertisement[]>([]);
   const [carouselLinks, setCarouselLinks] = useState<string[]>([]);
   const [imageError, setImageError] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [currentVideoRef, setCurrentVideoRef] = useState<HTMLVideoElement | null>(null);
   const router = useRouter();
 
 
 
   const goToPrevious = () => {
+    // Pause current video if playing
+    if (currentVideoRef && isVideoPlaying) {
+      currentVideoRef.pause();
+      setIsVideoPlaying(false);
+    }
+
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? carouselImages.length - 1 : prevIndex - 1
+      prevIndex === 0 ? carouselAds.length - 1 : prevIndex - 1
     );
   };
 
   const goToNext = () => {
+    // Pause current video if playing
+    if (currentVideoRef && isVideoPlaying) {
+      currentVideoRef.pause();
+      setIsVideoPlaying(false);
+    }
+
     setCurrentIndex((prevIndex) =>
-      prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
+      prevIndex === carouselAds.length - 1 ? 0 : prevIndex + 1
     );
   };
 
-  const handleImageClick = () => {
+  const handleSlideClick = () => {
     const currentLink = carouselLinks[currentIndex];
     if (currentLink) {
       window.open(currentLink, '_blank');
     }
+  };
+
+  const handleVideoPlay = (videoRef: HTMLVideoElement) => {
+    setCurrentVideoRef(videoRef);
+    setIsVideoPlaying(true);
+  };
+
+  const handleVideoPause = () => {
+    setIsVideoPlaying(false);
   };
 
   // Fetch advertisements from database
@@ -57,22 +90,49 @@ export default function Hero() {
           if (ads.length > 0) {
             // Limit to maximum 5 advertisements
             const limitedAds = ads.slice(0, 5);
-            setCarouselImages(limitedAds.map((ad: any) => ad.imageUrl));
-            setCarouselLinks(limitedAds.map((ad: any) => ad.linkUrl));
+            setCarouselAds(limitedAds);
+            setCarouselLinks(limitedAds.map((ad: Advertisement) => ad.linkUrl || ""));
           } else {
             // Use default images if no ads found (limit to 5)
-            setCarouselImages(defaultImages.slice(0, 5));
+            const defaultAds = defaultImages.slice(0, 5).map((url, index) => ({
+              id: `default-${index}`,
+              title: `Default Slide ${index + 1}`,
+              imageUrl: url,
+              videoUrl: undefined,
+              linkUrl: "",
+              description: "",
+              position: index
+            }));
+            setCarouselAds(defaultAds);
             setCarouselLinks([]);
           }
         } else {
           // Use default images if API fails (limit to 5)
-          setCarouselImages(defaultImages.slice(0, 5));
+          const defaultAds = defaultImages.slice(0, 5).map((url, index) => ({
+            id: `default-${index}`,
+            title: `Default Slide ${index + 1}`,
+            imageUrl: url,
+            videoUrl: undefined,
+            linkUrl: "",
+            description: "",
+            position: index
+          }));
+          setCarouselAds(defaultAds);
           setCarouselLinks([]);
         }
       } catch (error) {
         console.error("Failed to fetch advertisements:", error);
         // Use default images if fetch fails (limit to 5)
-        setCarouselImages(defaultImages.slice(0, 5));
+        const defaultAds = defaultImages.slice(0, 5).map((url, index) => ({
+          id: `default-${index}`,
+          title: `Default Slide ${index + 1}`,
+          imageUrl: url,
+          videoUrl: undefined,
+          linkUrl: "",
+          description: "",
+          position: index
+        }));
+        setCarouselAds(defaultAds);
         setCarouselLinks([]);
       }
     };
@@ -80,24 +140,26 @@ export default function Hero() {
     fetchAdvertisements();
   }, []);
 
-  // Reset currentIndex when carouselImages changes to prevent out-of-bounds
+  // Reset currentIndex when carouselAds changes to prevent out-of-bounds
   useEffect(() => {
-    if (currentIndex >= carouselImages.length && carouselImages.length > 0) {
+    if (currentIndex >= carouselAds.length && carouselAds.length > 0) {
       setCurrentIndex(0);
     }
-  }, [carouselImages, currentIndex]);
+  }, [carouselAds, currentIndex]);
 
-  // Auto-slide every 4 seconds
+  // Auto-slide every 4 seconds (only if video is not playing)
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        const length = carouselImages.length;
-        return length === 0 ? 0 : (prevIndex === length - 1 ? 0 : prevIndex + 1);
-      });
+      if (!isVideoPlaying) {
+        setCurrentIndex((prevIndex) => {
+          const length = carouselAds.length;
+          return length === 0 ? 0 : (prevIndex === length - 1 ? 0 : prevIndex + 1);
+        });
+      }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [carouselImages.length]); // Only depend on the length
+  }, [carouselAds.length, isVideoPlaying]);
 
   // Fetch categories from database
   useEffect(() => {
@@ -132,28 +194,65 @@ export default function Hero() {
       <div className="relative rounded-2xl border border-dashed">
         <div className="relative">
           <div className="relative overflow-hidden rounded-2xl rounded-b-none h-[420px]">
-            {!imageError && carouselImages[currentIndex] ? (
-              <Image
-                src={carouselImages[currentIndex]}
-                alt={`Hero slide ${currentIndex + 1}`}
-                fill
-                className={`object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''
-                  }`}
-                onClick={handleImageClick}
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="h-[420px] bg-gray-200 flex items-center justify-center">
-                <svg className="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
+            {carouselAds[currentIndex] && (
+              <div className="relative w-full h-full">
+                {carouselAds[currentIndex].videoUrl ? (
+                  <video
+                    src={carouselAds[currentIndex].videoUrl}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''}`}
+                    onClick={handleSlideClick}
+                    onPlay={(e) => handleVideoPlay(e.currentTarget)}
+                    onPause={handleVideoPause}
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                  />
+                ) : carouselAds[currentIndex].imageUrl ? (
+                  <Image
+                    src={carouselAds[currentIndex].imageUrl}
+                    alt={carouselAds[currentIndex].title || `Hero slide ${currentIndex + 1}`}
+                    fill
+                    className={`object-cover transition-opacity duration-500 ${carouselLinks[currentIndex] ? 'cursor-pointer' : ''}`}
+                    onClick={handleSlideClick}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="h-[420px] bg-gray-200 flex items-center justify-center">
+                    <svg className="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                  </div>
+                )}
+
+                {/* Advertisement title overlay */}
+                {carouselAds[currentIndex].title && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+                    <h2 className="text-white text-2xl font-bold mb-2">
+                      {carouselAds[currentIndex].title}
+                    </h2>
+                    {carouselAds[currentIndex].description && (
+                      <p className="text-white/90 text-sm">
+                        {carouselAds[currentIndex].description}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Video playing indicator */}
+                {carouselAds[currentIndex].videoUrl && isVideoPlaying && (
+                  <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                    <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+                    Playing Video
+                  </div>
+                )}
               </div>
             )}
 
             {/* Navigation buttons */}
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-foreground hover:bg-black/70 transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-foreground hover:bg-black/70 transition-colors z-10"
               aria-label="Previous image"
             >
               <ChevronLeft className="h-6 w-6" />
@@ -161,15 +260,15 @@ export default function Hero() {
 
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-foreground hover:bg-black/70 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-foreground hover:bg-black/70 transition-colors z-10"
               aria-label="Next image"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
 
             {/* Dot indicators */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              {carouselImages.map((_, index) => (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {carouselAds.map((_: Advertisement, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
@@ -184,7 +283,8 @@ export default function Hero() {
 
             {/* Show link indicator if current slide has a link */}
             {carouselLinks[currentIndex] && (
-              <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm z-10 flex items-center">
+                <ArrowRight className="h-3 w-3 mr-1" />
                 Click to visit
               </div>
             )}

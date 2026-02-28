@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Block admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /billing/
+Disallow: /manage/
+Disallow: /my-products/
+Disallow: /return/
+Disallow: /payment/
+Disallow: /unauthorized/
+
+# Block test and development pages
+Disallow: /test-*
+Disallow: /*?test=*
+
+# Allow specific API endpoints for SEO
+Allow: /api/products
+Allow: /api/categories
+
+# Sitemap
+Sitemap: https://heywhymarketplace.com/sitemap.xml
+
+# Crawl delay (optional, be nice to servers)
+Crawl-delay: 1

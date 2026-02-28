@@ -30,7 +30,7 @@ interface ActivityItem {
   ipAddress?: string;
   userAgent?: string;
   createdAt: string;
-  user: {
+  user?: {
     id: string;
     firstName: string;
     lastName: string;
@@ -114,9 +114,9 @@ export function ActivityMonitoring() {
     const matchesSearch =
       activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (activity.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (activity.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (activity.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
     if (!matchesSearch) return false;
 
@@ -229,7 +229,7 @@ export function ActivityMonitoring() {
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
-                            {activity.user.firstName} {activity.user.lastName}
+                            {activity.user ? `${activity.user.firstName} ${activity.user.lastName}` : 'Unknown User'}
                           </div>
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-1" />
@@ -255,7 +255,8 @@ export function ActivityMonitoring() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`/admin/users/${activity.user.id}`, '_blank')}
+                          onClick={() => activity.user && window.open(`/admin/users/${activity.user.id}`, '_blank')}
+                          disabled={!activity.user}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>

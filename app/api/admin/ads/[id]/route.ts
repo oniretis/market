@@ -11,13 +11,14 @@ export async function PUT(
     const { id } = params;
 
     const body = await request.json();
-    const { title, imageUrl, linkUrl, description, isActive, position, startDate, endDate } = body;
+    const { title, imageUrl, videoUrl, linkUrl, description, isActive, position, startDate, endDate } = body;
 
     const ad = await (prisma as any).advertisement.update({
       where: { id },
       data: {
         ...(title !== undefined && { title }),
         ...(imageUrl !== undefined && { imageUrl }),
+        ...(videoUrl !== undefined && { videoUrl }),
         ...(linkUrl !== undefined && { linkUrl }),
         ...(description !== undefined && { description }),
         ...(isActive !== undefined && { isActive }),

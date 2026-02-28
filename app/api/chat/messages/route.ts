@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { getCurrentUser } from '@/app/lib/admin';
 import { z } from 'zod';
+import { Server as ServerIO } from 'socket.io';
+import { NextApiResponse } from 'next';
 
 const sendMessageSchema = z.object({
   conversationId: z.string().uuid('Invalid conversation ID'),
@@ -20,15 +22,21 @@ export async function POST(request: NextRequest) {
     const { conversationId, content, messageType } = sendMessageSchema.parse(body);
 
     // Check if conversation exists and user has access
+    const accessConditions: any[] = [
+      { userId: user.id },
+      { adminId: user.id },
+    ];
+
+    // Add admin access condition for unassigned conversations
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      accessConditions.push({ adminId: null });
+    }
+
     const conversation = await prisma.chatConversation.findFirst({
       where: {
         id: conversationId,
         isActive: true,
-        OR: [
-          { userId: user.id },
-          { adminId: user.id },
-          { adminId: null, User: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } } },
-        ],
+        OR: accessConditions,
       },
       include: {
         Product: { select: { name: true } },
@@ -100,6 +108,43 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Emit real-time message via Socket.IO
+    try {
+      const io = global.io as ServerIO;
+      if (io) {
+        // Get conversation participants
+        const participants = await prisma.chatConversation.findUnique({
+          where: { id: conversationId },
+          select: { userId: true, adminId: true }
+        });
+
+        // Determine who should receive the message (not the sender)
+        const recipientId = user.id === participants?.userId ? participants?.adminId : participants?.userId;
+
+        // Create message payload
+        const messagePayload = {
+          ...message,
+          conversationId,
+          senderId: user.id,
+          recipientId,
+        };
+
+        if (recipientId) {
+          // Send to specific recipient only (not to the sender)
+          io.to(`user:${recipientId}`).emit('new_message', messagePayload);
+          console.log('Message sent to specific user:', recipientId, 'Message ID:', message.id);
+        } else {
+          // If no specific recipient (unassigned conversation), send to conversation room but exclude sender
+          // This is a fallback - ideally we should have a recipient
+          io.to(`conversation:${conversationId}`).emit('new_message', messagePayload);
+          console.log('Message broadcasted to conversation room (no specific recipient):', message.id);
+        }
+      }
+    } catch (socketError) {
+      console.error('Socket.IO broadcast error:', socketError);
+      // Continue without failing the API response
+    }
+
     return NextResponse.json(message);
   } catch (error) {
     console.error('Send message error:', error);
@@ -119,6 +164,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const conversationId = searchParams.get('conversationId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50'); // Load 50 messages at a time
+    const cursor = searchParams.get('cursor'); // For cursor-based pagination
 
     if (!conversationId) {
       return NextResponse.json({ error: 'Conversation ID required' }, { status: 400 });
@@ -135,15 +183,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user has access to conversation
+    const accessConditions: any[] = [
+      { userId: user.id },
+      { adminId: user.id },
+    ];
+
+    // Add admin access condition for unassigned conversations
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      accessConditions.push({ adminId: null });
+    }
+
     const conversation = await prisma.chatConversation.findFirst({
       where: {
         id: conversationId,
         isActive: true,
-        OR: [
-          { userId: user.id },
-          { adminId: user.id },
-          { adminId: null, User: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } } },
-        ],
+        OR: accessConditions,
       },
     });
 
@@ -151,11 +205,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Conversation not found or access denied' }, { status: 404 });
     }
 
-    // Get messages
+    // Build where clause for pagination
+    const whereClause: any = { conversationId };
+    if (cursor) {
+      whereClause.createdAt = { lt: new Date(cursor) };
+    }
+
+    // Get messages with pagination
     const messages = await prisma.message.findMany({
-      where: {
-        conversationId,
-      },
+      where: whereClause,
       include: {
         Sender: {
           select: {
@@ -167,10 +225,19 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' }, // Get newest first for pagination
+      take: limit,
     });
 
-    // Mark messages as read for current user
+    // Reverse to get chronological order
+    const chronologicalMessages = messages.reverse();
+
+    // Get total count for pagination info
+    const totalCount = await prisma.message.count({
+      where: { conversationId },
+    });
+
+    // Mark messages as read for current user (only for messages they received)
     await prisma.message.updateMany({
       where: {
         conversationId,
@@ -180,7 +247,22 @@ export async function GET(request: NextRequest) {
       data: { isRead: true },
     });
 
-    return NextResponse.json(messages);
+    // Return paginated response
+    const hasMore = messages.length === limit;
+    const nextCursor = hasMore && messages.length > 0
+      ? messages[messages.length - 1].createdAt
+      : null;
+
+    return NextResponse.json({
+      messages: chronologicalMessages,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        nextCursor,
+      },
+    });
   } catch (error) {
     console.error('Get messages error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -76,16 +76,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, imageUrl, linkUrl, description, isActive, position, startDate, endDate } = body;
+    const { title, imageUrl, videoUrl, linkUrl, description, isActive, position, startDate, endDate } = body;
 
-    if (!title || !imageUrl) {
-      return NextResponse.json({ error: "Title and image URL are required" }, { status: 400 });
+    if (!title || (!imageUrl && !videoUrl)) {
+      return NextResponse.json({ error: "Title and either image URL or video URL are required" }, { status: 400 });
     }
 
     const ad = await (prisma as any).advertisement.create({
       data: {
         title,
-        imageUrl,
+        imageUrl: imageUrl || "", // Provide empty string if no image
+        videoUrl,
         linkUrl,
         description,
         isActive: isActive !== undefined ? isActive : true,

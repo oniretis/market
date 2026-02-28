@@ -30,6 +30,7 @@ export async function GET() {
         id: true,
         title: true,
         imageUrl: true,
+        videoUrl: true,
         linkUrl: true,
         description: true,
         position: true,

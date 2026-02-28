@@ -8,12 +8,38 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
+    const sortBy = searchParams.get('sortBy') || 'recent';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
     const whereClause: any = {
       isActive: status === 'all' ? undefined : status === 'active',
     };
+
+    // Determine sorting based on sortBy parameter
+    let orderBy: any = { updatedAt: 'desc' }; // default
+
+    switch (sortBy) {
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'unread':
+        // Sort by unread messages count first, then by recent activity
+        orderBy = [
+          { _count: { Message: { where: { isRead: false, senderId: { not: admin.id } } } }, order: 'desc' },
+          { updatedAt: 'desc' }
+        ];
+        break;
+      case 'active':
+        // Sort by most recent message activity
+        orderBy = { updatedAt: 'desc' };
+        break;
+      case 'recent':
+      default:
+        // Sort by most recent activity (default)
+        orderBy = { updatedAt: 'desc' };
+        break;
+    }
 
     const conversations = await prisma.chatConversation.findMany({
       where: whereClause,
@@ -43,10 +69,6 @@ export async function GET(request: NextRequest) {
             price: true,
           },
         },
-        Message: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
         _count: {
           select: {
             Message: {
@@ -58,7 +80,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy,
       skip: (page - 1) * limit,
       take: limit,
     });

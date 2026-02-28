@@ -23,6 +23,7 @@ export async function GET() {
       include: {
         User: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             email: true,
@@ -35,7 +36,14 @@ export async function GET() {
       take: 100, // Limit to last 100 activities
     });
 
-    return NextResponse.json({ activities });
+    // Transform the data to match frontend expectations
+    const transformedActivities = activities.map(activity => ({
+      ...activity,
+      user: activity.User,
+      User: undefined, // Remove the original User property
+    }));
+
+    return NextResponse.json({ activities: transformedActivities });
   } catch (error) {
     console.error("Activity API error:", error);
 

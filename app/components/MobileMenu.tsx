@@ -7,6 +7,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SearchBar } from "./SearchBar";
 
 interface NavbarLink {
   id: number;
@@ -84,6 +85,12 @@ export function MobileMenu() {
       </SheetTrigger>
       <SheetContent>
         <div className="mt-5 flex px-2 space-y-1 flex-col">
+          {/* Mobile Search */}
+          <div className="mb-4">
+            <SearchBar />
+          </div>
+
+          {/* Navigation Links */}
           {navbarLinks.map((item) => (
             <Link
               href={item.href}
