@@ -65,7 +65,15 @@ export default function Hero() {
   const handleSlideClick = () => {
     const currentLink = carouselLinks[currentIndex];
     if (currentLink) {
-      window.open(currentLink, '_blank');
+      // Ensure the URL is properly formatted as an external link
+      let formattedUrl = currentLink.trim();
+
+      // If the URL doesn't start with http:// or https://, add https://
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      window.open(formattedUrl, '_blank');
     }
   };
 
